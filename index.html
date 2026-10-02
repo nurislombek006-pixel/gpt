@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Своя игра — Глобальная экономика</title>
+<style>
+:root{
+  --bg:#071426;--panel:#0d2442;--panel2:#12345f;--gold:#ffd54a;--text:#f7fbff;--muted:#9fb6cf;
+  --used:#1a2431;--danger:#ff6b6b;--ok:#47d16c;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:
+radial-gradient(circle at top,#123765 0,#071426 45%,#030914 100%);color:var(--text);min-height:100vh}
+.wrap{max-width:1440px;margin:0 auto;padding:24px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:22px}
+h1{margin:0;font-size:clamp(28px,4vw,54px);letter-spacing:.5px}
+.subtitle{color:var(--muted);margin-top:6px}
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+button{font:inherit}
+.btn{border:1px solid #355a84;background:#0f2b4c;color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700}
+.btn:hover{background:#17395f}.btn.admin{border-color:#8d6d00;color:var(--gold)}
+.board{display:grid;grid-template-columns:repeat(5,minmax(150px,1fr));gap:10px}
+.cat{background:linear-gradient(180deg,#173f70,#0c2b4f);border:1px solid #2c5b8a;border-radius:14px;padding:18px 10px;text-align:center;font-weight:900;min-height:92px;display:flex;align-items:center;justify-content:center}
+.cell{height:112px;border:1px solid #315d8b;border-radius:14px;background:linear-gradient(145deg,#0f3765,#0a2748);display:flex;align-items:center;justify-content:center;color:var(--gold);font-size:clamp(28px,3.5vw,46px);font-weight:1000;cursor:pointer;box-shadow:0 8px 24px #0005;transition:.15s transform,.15s opacity,.15s background}
+.cell:hover{transform:translateY(-2px);background:linear-gradient(145deg,#17497f,#0f3158)}
+.cell.used{background:var(--used);color:#66788d;opacity:.55;box-shadow:none}
+.modal{position:fixed;inset:0;background:#02060ddd;display:none;align-items:center;justify-content:center;padding:20px;z-index:10}
+.modal.show{display:flex}
+.card{width:min(900px,100%);background:linear-gradient(180deg,#102d4f,#081827);border:1px solid #315d8b;border-radius:24px;padding:26px;box-shadow:0 30px 90px #000b}
+.meta{display:flex;justify-content:space-between;gap:12px;align-items:center;color:var(--gold);font-weight:800}
+.q{font-size:clamp(24px,4vw,42px);line-height:1.25;margin:30px 0}
+.answer{display:none;margin-top:20px;padding:18px;border-radius:16px;background:#0b2037;border:1px solid #2e5f8f;font-size:clamp(20px,2.5vw,30px);line-height:1.35}
+.answer.show{display:block}
+.answer b{color:var(--gold)}
+.row{display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;margin-top:24px}
+.close{background:#17293d}.showans{background:#7a5c00;border-color:#b98c00}
+.locknote{color:var(--muted);font-size:13px;margin-top:12px}
+.pwbox{display:none;margin-top:18px;padding:16px;border:1px solid #355a84;border-radius:14px;background:#071421}
+.pwbox.show{display:block}
+input{width:100%;padding:13px 14px;border-radius:10px;border:1px solid #3b638d;background:#0b1f35;color:#fff;font-size:18px;outline:none}
+.msg{min-height:20px;margin-top:8px;font-weight:700}
+.ok{color:var(--ok)}.err{color:var(--danger)}
+.footer{color:#7289a2;text-align:center;margin:22px 0 4px;font-size:13px}
+@media(max-width:850px){
+  .wrap{padding:12px}.top{align-items:flex-start;flex-direction:column}.board{gap:6px;overflow-x:auto;padding-bottom:8px;grid-template-columns:repeat(5,minmax(130px,1fr))}
+  .cat{min-height:82px;padding:10px 6px;font-size:14px}.cell{height:86px}.card{padding:20px}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>Своя игра</h1>
+      <div class="subtitle">Глобальная экономика · 5 категорий × 5 вопросов</div>
+    </div>
+    <div class="actions">
+      <button class="btn admin" id="adminBtn">🔒 Ответы</button>
+      <button class="btn" id="resetBtn">↻ Сбросить поле</button>
+    </div>
+  </div>
+  <div class="board" id="board"></div>
+  <div class="footer">Ответы доступны после ввода админ-пароля. После успешного входа пароль повторно не спрашивается на этом устройстве.</div>
+</div>
+
+<div class="modal" id="modal">
+  <div class="card">
+    <div class="meta"><span id="catName"></span><span id="points"></span></div>
+    <div class="q" id="question"></div>
+    <div class="answer" id="answer"></div>
+
+    <div class="pwbox" id="pwbox">
+      <input id="pwinput" type="password" inputmode="numeric" placeholder="Введите пароль администратора" autocomplete="off">
+      <div class="msg" id="pwmsg"></div>
+      <div class="row"><button class="btn showans" id="loginBtn">Войти</button></div>
+    </div>
+
+    <div class="locknote" id="locknote">Ответ скрыт. Для просмотра нужен админ-доступ.</div>
+    <div class="row">
+      <button class="btn showans" id="answerBtn">Показать ответ</button>
+      <button class="btn close" id="closeBtn">Закрыть</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const ADMIN_PASSWORD = "2611";
+const categories = [
+  {
+    name:"Международная торговля",
+    qs:[
+      ["Что включает внешняя торговля страны?","Экспорт и импорт товаров данной страны."],
+      ["Как рассчитывается торговый оборот?","ТО = экспорт + импорт."],
+      ["Как рассчитывается торговое сальдо?","ТБ = экспорт − импорт."],
+      ["Что такое мировая торговля по определению из презентации?","Сумма стоимости экспорта всех стран мира."],
+      ["Назовите два принципа, определяющих выгоды стран от мировой торговли.","Принципы абсолютного и относительного (сравнительного) преимущества."]
+    ]
+  },
+  {
+    name:"Теории и политика торговли",
+    qs:[
+      ["Какие два основных подхода существуют во внешнеторговой политике?","Фритрейдерство и протекционизм."],
+      ["Что означает фритрейдерство?","Политика, ориентированная на свободную торговлю."],
+      ["Что такое протекционизм?","Государственная политика ограничения свободной торговли для защиты и поддержки национальной экономики."],
+      ["Назовите одну цель протекционизма.","Например: защита отечественного производителя от демпинга, защита молодых отраслей, оборонных отраслей или ответные меры на действия других стран."],
+      ["Сколько этапов эволюции международной торговли выделено в презентации?","Пять этапов."]
+    ]
+  },
+  {
+    name:"Платёжный баланс",
+    qs:[
+      ["Что в целом охватывает платёжный баланс страны?","Все операции между резидентами и нерезидентами, связанные с товарами, услугами, ценностями, деньгами и финансовыми активами."],
+      ["Обязательно ли операция платёжного баланса должна сопровождаться реальной денежной оплатой?","Нет. Операция может быть обменной, кредитной или безвозмездной."],
+      ["Как денежные переводы могут влиять на платёжный баланс?","Они могут укреплять платёжный баланс страны."],
+      ["Как денежные переводы влияют на внешние дисбалансы?","Могут способствовать их снижению."],
+      ["Назовите один социально-экономический эффект денежных переводов.","Например: снижение бедности, перераспределение доходов, усиление миграционных потоков или формирование диаспорных сетей."]
+    ]
+  },
+  {
+    name:"География экономики",
+    qs:[
+      ["Какие факторы определяет пространственное положение в экономике?","Размещение производительных сил, формирование рынков, транспортных связей и экономическую специализацию."],
+      ["Почему страны без выхода к морю часто несут дополнительные издержки?","Из-за более высоких транспортных расходов и зависимости от транзитных маршрутов."],
+      ["Как развитая транспортная сеть влияет на экономику?","Снижает издержки доставки и облегчает внешнеэкономическую интеграцию."],
+      ["Как география населения влияет на рынок?","Численность, плотность и структура населения определяют объём рабочей силы и ёмкость внутреннего рынка."],
+      ["Какую цель для Узбекистана преследуют новые транспортные коридоры?","Превратить внутриконтинентальность из недостатка в преимущество и лучше связать страну с мировыми рынками."]
+    ]
+  },
+  {
+    name:"Глобализация и неравенство",
+    qs:[
+      ["Как глобализация может влиять на межстрановое неравенство?","Через торговлю и инвестиции часть развивающихся стран может ускорять рост и сокращать разрыв с развитыми."],
+      ["Какие работники, согласно презентации, чаще выигрывают от глобализации?","Высококвалифицированные специалисты, поскольку растёт спрос на знания, технологии и квалификацию."],
+      ["Почему может усиливаться разрыв между городом и деревней?","Глобальные инвестиции часто концентрируются в крупных городах и индустриальных зонах."],
+      ["Назовите один положительный эффект глобализации для сокращения неравенства.","Например: доступ к технологиям и знаниям, новые рабочие места, расширение рынков для малого и среднего бизнеса."],
+      ["Назовите один отрицательный эффект глобализации, указанный в презентации.","Например: утечка мозгов, финансовая уязвимость или социальная поляризация."]
+    ]
+  }
+];
+
+const scores=[100,200,300,400,500];
+const board=document.getElementById("board");
+const modal=document.getElementById("modal");
+const catName=document.getElementById("catName");
+const points=document.getElementById("points");
+const question=document.getElementById("question");
+const answer=document.getElementById("answer");
+const answerBtn=document.getElementById("answerBtn");
+const closeBtn=document.getElementById("closeBtn");
+const resetBtn=document.getElementById("resetBtn");
+const adminBtn=document.getElementById("adminBtn");
+const pwbox=document.getElementById("pwbox");
+const pwinput=document.getElementById("pwinput");
+const pwmsg=document.getElementById("pwmsg");
+const loginBtn=document.getElementById("loginBtn");
+const locknote=document.getElementById("locknote");
+let current=null;
+let unlocked=localStorage.getItem("svoya_admin_unlocked")==="yes";
+let used=JSON.parse(localStorage.getItem("svoya_used")||"{}");
+
+function render(){
+  board.innerHTML="";
+  categories.forEach(c=>{
+    const el=document.createElement("div");el.className="cat";el.textContent=c.name;board.appendChild(el);
+  });
+  scores.forEach((score,row)=>{
+    categories.forEach((c,col)=>{
+      const key=col+"-"+row;
+      const el=document.createElement("div");
+      el.className="cell"+(used[key]?" used":"");
+      el.textContent=score;
+      el.onclick=()=>openQ(col,row,el);
+      board.appendChild(el);
+    });
+  });
+  adminBtn.textContent=unlocked?"🔓 Ответы открыты":"🔒 Ответы";
+}
+function openQ(col,row,el){
+  current={col,row,key:col+"-"+row,el};
+  catName.textContent=categories[col].name;
+  points.textContent=scores[row]+" баллов";
+  question.textContent=categories[col].qs[row][0];
+  answer.innerHTML="<b>Ответ:</b> "+categories[col].qs[row][1];
+  answer.classList.remove("show");pwbox.classList.remove("show");pwmsg.textContent="";pwinput.value="";
+  syncAccess();
+  used[current.key]=true;localStorage.setItem("svoya_used",JSON.stringify(used));render();
+  modal.classList.add("show");
+}
+function syncAccess(){
+  if(unlocked){
+    answerBtn.style.display="inline-block";locknote.style.display="none";pwbox.classList.remove("show");
+  }else{
+    answerBtn.style.display="inline-block";locknote.style.display="block";
+  }
+}
+function showAnswer(){
+  if(!unlocked){
+    pwbox.classList.add("show");pwinput.focus();return;
+  }
+  answer.classList.add("show");
+  answerBtn.textContent="Ответ открыт";
+}
+function login(){
+  if(pwinput.value===ADMIN_PASSWORD){
+    unlocked=true;localStorage.setItem("svoya_admin_unlocked","yes");
+    pwmsg.className="msg ok";pwmsg.textContent="Доступ открыт";
+    pwbox.classList.remove("show");
+    syncAccess();answer.classList.add("show");answerBtn.textContent="Ответ открыт";render();
+  }else{
+    pwmsg.className="msg err";pwmsg.textContent="Неверный пароль";
+  }
+}
+answerBtn.onclick=showAnswer;
+loginBtn.onclick=login;
+pwinput.addEventListener("keydown",e=>{if(e.key==="Enter")login()});
+closeBtn.onclick=()=>{modal.classList.remove("show");answerBtn.textContent="Показать ответ"};
+modal.addEventListener("click",e=>{if(e.target===modal)closeBtn.click()});
+resetBtn.onclick=()=>{if(confirm("Сбросить использованные вопросы?")){used={};localStorage.removeItem("svoya_used");render()}};
+adminBtn.onclick=()=>{
+  if(unlocked){alert("Админ-доступ уже открыт на этом устройстве.");return;}
+  modal.classList.add("show");catName.textContent="Админ-доступ";points.textContent="";
+  question.textContent="Введите пароль один раз, чтобы просматривать ответы без повторного запроса.";
+  answer.classList.remove("show");pwbox.classList.add("show");locknote.style.display="none";answerBtn.style.display="none";pwinput.focus();
+};
+render();
+</script>
+</body>
+</html>
