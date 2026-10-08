@@ -79,11 +79,11 @@ const el=$(id);if(el){el.value=state[id];el.addEventListener("change",()=>{state
 });
 refresh();
 $("empty").onclick=()=>{if(!valid()){notice("status","Сначала исправь количество вопросов.","err");return}renderEditor();goStep(2);notice("editorStatus","Открой тему и введи вопросы.","ok")};
-$("clearQuestions").onclick=()=>{if(!confirm("Удалить все введённые вопросы и ответы?"))return;state.categories.forEach(c=>c.qs.forEach(q=>{q[0]="";q[1]=""}));renderEditor();save();notice("status","Вопросы удалены.","ok")};
+$("clearQuestions").onclick=()=>{if(!confirm("Удалить все введённые вопросы и ответы?"))return;state.categories.forEach(c=>c.qs.forEach(q=>{q[0]="";q[1]=""}));renderEditor();save();notice("editorStatus","Вопросы удалены.","ok")};
 $("demo").onclick=()=>{
 if(!valid()){notice("status","Сначала выбери число вопросов, кратное числу тем.","err");return}
 if(state.categories.some(c=>c.qs.some(q=>q[0]||q[1]))&&!confirm("Заменить текущие вопросы демонстрационными?"))return;
-state.categories.forEach(cat=>cat.qs.forEach((q,i)=>{q[0]="Пример для темы «"+(cat.name||"Без названия")+"»: сформулируйте вопрос уровня "+(i+1)+".";q[1]="Введите правильный ответ для этого уровня."}));renderEditor();save();notice("status","Добавлены шаблоны-примеры, не сгенерированные ИИ. Замени их перед игрой.","note")
+state.categories.forEach(cat=>cat.qs.forEach((q,i)=>{q[0]="Пример для темы «"+(cat.name||"Без названия")+"»: сформулируйте вопрос уровня "+(i+1)+".";q[1]="Введите правильный ответ для этого уровня."}));renderEditor();save();notice("editorStatus","Примеры добавлены — замени текст вопросов.","note")
 };
 $("file").addEventListener("change",async e=>{
 const file=e.target.files[0];if(!file)return;
@@ -98,18 +98,18 @@ if(!/^https?:\/\//i.test(base))throw Error("Укажи URL ИИ-сервера, 
 return base.endsWith("/api/generate")?base:base+"/api/generate"
 }
 async function generate(){
-if(generating)return;if(!valid()){notice("status","Исправь распределение вопросов перед генерацией.","err");return}
+if(generating)return;if(!valid()){notice("editorStatus","Исправь распределение вопросов перед генерацией.","err");return}
 if(state.categories.some(c=>c.qs.some(q=>q[0]||q[1]))&&!confirm("ИИ заменит все заполненные вопросы. Продолжить?"))return;
-let url;try{url=endpoint()}catch(e){notice("status",e.message,"err");return}
-generating=true;$("generate").disabled=true;
+let url;try{url=endpoint()}catch(e){notice("editorStatus",e.message,"err");return}
+goStep(2);generating=true;$("generate").disabled=true;$("regenerate").disabled=true;
 let done=0,total=state.questionsCount;
-notice("status","ИИ работает: создание вопросов…","note");
+notice("editorStatus","ИИ работает: создание вопросов…","note");
 try{
 for(let ci=0;ci<state.categories.length;ci++){
 const cat=state.categories[ci];const n=cat.qs.length;
 for(let start=0;start<n;start+=5){
 const count=Math.min(5,n-start);
-notice("status","ИИ: «"+(cat.name||"Тема "+(ci+1))+"», вопросы "+(start+1)+"–"+(start+count)+" из "+n+". Всего готово "+done+"/"+total+".","note");
+notice("editorStatus","ИИ: «"+(cat.name||"Тема "+(ci+1))+"», вопросы "+(start+1)+"–"+(start+count)+" из "+n+". Всего готово "+done+"/"+total+".","note");
 const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),75000);
 let response;
 try{response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:cat.name||"Тема "+(ci+1),subject:state.subject,difficulty:state.difficulty,number:count,offset:start,source:state.source.slice(0,9000),avoid:cat.qs.slice(0,start).map(x=>x[0]).filter(Boolean)}),signal:controller.signal})}finally{clearTimeout(timer)}
@@ -120,11 +120,11 @@ data.items.slice(0,count).forEach((item,k)=>{if(typeof item.question!=="string"|
 done+=count;save();renderEditor();
 }
 }
-notice("status","Готово! ИИ подготовил "+done+" вопросов. Проверь их, затем скачай HTML.","ok");
-}catch(e){notice("status","ИИ остановился после "+done+" вопросов: "+(e.name==="AbortError"?"превышено время ожидания ответа.":e.message)+" Проверь адрес сервера и попробуй снова. Уже созданные вопросы сохранены.","err")}
-finally{generating=false;$("generate").disabled=false}
+notice("editorStatus","Готово! ИИ подготовил "+done+" вопросов. Проверь их, затем скачай HTML.","ok");
+}catch(e){notice("editorStatus","ИИ остановился после "+done+" вопросов: "+(e.name==="AbortError"?"превышено время ожидания ответа.":e.message)+" Проверь адрес сервера и попробуй снова. Уже созданные вопросы сохранены.","err")}
+finally{generating=false;$("generate").disabled=false;$("regenerate").disabled=false}
 }
-$("generate").onclick=generate;
+$("generate").onclick=generate;$("regenerate").onclick=generate;
 function makeConfig(){
 if(!valid())throw Error("Количество вопросов должно делиться на количество тем.");
 const cats=state.categories.map((c,i)=>({name:(c.name||"Тема "+(i+1)).trim(),qs:c.qs.map((q,j)=>{if(!q[0].trim()||!q[1].trim())throw Error("Заполни вопрос и ответ: "+(c.name||"Тема "+(i+1))+", "+(j+1)+"00 баллов.");return [q[0].trim(),q[1].trim()]})}));
