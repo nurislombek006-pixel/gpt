@@ -177,33 +177,81 @@ return base.endsWith("/api/generate")?base:base+"/api/generate"
 }
 function aiProgress(done,total,label,active){const box=$("aiProgress");box.hidden=false;const pct=total?Math.round(done/total*100):0;$("aiProgressFill").style.width=pct+"%";$("aiProgressPercent").textContent=pct+"%";$("aiProgressText").textContent=label;box.setAttribute("aria-valuenow",String(pct));box.classList.toggle("running",active);box.classList.toggle("done",done===total);}
 async function generate(){
-if(generating)return;if(!valid()){notice("status","Исправь распределение вопросов перед генерацией.","err");return}
-if(state.categories.some(c=>c.qs.some(q=>q[0]||q[1]))&&!confirm("ИИ заменит все заполненные вопросы. Продолжить?"))return;
-let url;try{url=endpoint()}catch(e){notice("editorStatus",e.message,"err");return}
+if(generating)return;
+if(!valid()){notice("status","Сначала исправь количество вопросов.","err");return}
+const total=state.questionsCount;
+const ready=()=>state.categories.reduce((n,c)=>n+c.qs.filter(x=>x[0].trim()&&x[1].trim()).length,0);
+if(ready()===total&&!confirm("Заменить все вопросы новыми?"))return;
+if(ready()===total)state.categories.forEach(c=>c.qs.forEach(q=>{q[0]="";q[1]=""}));
+let url;
+try{url=endpoint()}catch(e){notice("status",e.message,"err");return}
 goStep(2);generating=true;$("generate").disabled=true;$("regenerate").disabled=true;
-let done=0,total=state.questionsCount;
-aiProgress(0,total,"Подготовка вопросов…",true);
-notice("editorStatus","ИИ работает: создание вопросов…","note");
+let done=ready(),singleMode=false;
+const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+const progress=(message)=>{aiProgress(done,total,message,true);notice("editorStatus","Создано "+done+" из "+total+". "+message,"note")};
+progress("ИИ готовит вопросы…");
+async function ask(cat,ci,start,count){
+ const body={category:cat.name||"Тема "+(ci+1),subject:state.subject,difficulty:state.difficulty,
+ number:count,offset:start,source:state.source.slice(0,9000),
+ avoid:cat.qs.map(q=>q[0]).filter(Boolean).slice(-20)};
+ for(let attempt=0;attempt<5;attempt++){
+  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),90000);
+  try{
+   const response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},
+     body:JSON.stringify(body),signal:controller.signal});
+   let data;
+   try{data=await response.json()}catch(e){throw Error("ИИ-сервер прислал некорректный ответ.")}
+   if(response.status===429){
+    if(attempt===4)throw Error("Сервис ИИ перегружен. Попробуй позднее.");
+    progress("Лимит запросов: автоматически повторяю после паузы…");
+    await sleep(65000);continue;
+   }
+   if(!response.ok){
+    const message=String(data.error||"HTTP "+response.status);
+    if(count>1&&/Модель выдала|вместо.*вопрос|меньше вопросов|not enough|fewer questions/i.test(message)){
+      singleMode=true;return null;
+    }
+    if(response.status>=500&&attempt<3){
+      progress("ИИ пока не ответил. Повторная попытка "+(attempt+2)+"…");
+      await sleep((attempt+1)*2600);continue;
+    }
+    throw Error(message);
+   }
+   const items=Array.isArray(data.items)?data.items.filter(x=>x&&typeof x.question==="string"&&x.question.trim()&&typeof x.answer==="string"&&x.answer.trim()):[];
+   if(items.length<count&&count>1){singleMode=true;return null}
+   if(items.length<count)throw Error("ИИ не смог составить один вопрос.");
+   return items.slice(0,count);
+  }catch(e){
+   if(e.name==="AbortError"||e.name==="TypeError"){
+    if(attempt<3){progress("Сеть или ИИ задерживается. Повторная попытка…");await sleep((attempt+1)*2500);continue}
+    throw Error("Нет ответа от ИИ. Проверь соединение.");
+   }
+   throw e;
+  }finally{clearTimeout(timer)}
+ }
+ throw Error("Превышено количество попыток.");
+}
 try{
-for(let ci=0;ci<state.categories.length;ci++){
-const cat=state.categories[ci];const n=cat.qs.length;
-for(let start=0;start<n;start+=5){
-const count=Math.min(5,n-start);
-aiProgress(done,total,"ИИ думает · "+cat.name+" · вопросы "+(start+1)+"–"+(start+count),true);
-notice("editorStatus","ИИ генерирует вопросы. Создано "+done+" из "+total+".","note");
-const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),75000);
-let response;
-try{response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:cat.name||"Тема "+(ci+1),subject:state.subject,difficulty:state.difficulty,number:count,offset:start,source:state.source.slice(0,9000),avoid:cat.qs.slice(0,start).map(x=>x[0]).filter(Boolean)}),signal:controller.signal})}finally{clearTimeout(timer)}
-let data;try{data=await response.json()}catch(e){throw Error("ИИ-сервер вернул не JSON (HTTP "+response.status+").")}
-if(!response.ok)throw Error(data.error||"Сервер ИИ: HTTP "+response.status);
-if(!Array.isArray(data.items)||data.items.length<count)throw Error("ИИ вернул меньше вопросов, чем ожидалось. Попробуй ещё раз.");
-data.items.slice(0,count).forEach((item,k)=>{if(typeof item.question!=="string"||typeof item.answer!=="string")throw Error("Неправильный формат ответа ИИ.");cat.qs[start+k]=[item.question,item.answer]});
-done+=count;save();renderEditor();aiProgress(done,total,"Готово "+done+" из "+total+" вопросов",true);
-}
-}
-aiProgress(done,total,"Все вопросы созданы",false);notice("editorStatus","Проверь ответы, затем нажми «Далее».","ok");
-}catch(e){aiProgress(done,total,"Остановлено · "+done+" из "+total,false);notice("editorStatus","ИИ остановился после "+done+" вопросов: "+(e.name==="AbortError"?"превышено время ожидания ответа.":e.message)+" Проверь адрес сервера и попробуй снова. Уже созданные вопросы сохранены.","err")}
-finally{generating=false;$("generate").disabled=false;$("regenerate").disabled=false}
+ for(let ci=0;ci<state.categories.length;ci++){
+  const cat=state.categories[ci];
+  let start=0;
+  while(start<cat.qs.length){
+   if(cat.qs[start][0].trim()&&cat.qs[start][1].trim()){start++;continue}
+   const count=singleMode?1:Math.min(5,cat.qs.length-start);
+   progress("Тема «"+cat.name+"»: создаю "+(singleMode?"вопрос "+(start+1):"вопросы "+(start+1)+"–"+(start+count))+"…");
+   const items=await ask(cat,ci,start,count);
+   if(items===null){progress("Модель ответила неполностью. Дополняю вопросы по одному…");continue}
+   items.forEach((item,k)=>{cat.qs[start+k]=[item.question.trim(),item.answer.trim()]});
+   done=ready();save();renderEditor();aiProgress(done,total,"Готово "+done+" из "+total,true);
+   start+=count;
+  }
+ }
+ aiProgress(total,total,"Все вопросы созданы",false);
+ notice("editorStatus","Готово! Проверь ответы, затем нажми «Далее».","ok");
+}catch(e){
+ aiProgress(done,total,"Сохранено "+done+" из "+total,false);
+ notice("editorStatus","Создано "+done+" из "+total+". "+e.message+" Запусти ИИ ещё раз — заполненные вопросы останутся.","err");
+}finally{generating=false;$("generate").disabled=false;$("regenerate").disabled=false}
 }
 $("generate").onclick=generate;$("regenerate").onclick=generate;
 function makeConfig(){
