@@ -77,8 +77,7 @@ values.forEach(id=>{
 const el=$(id);if(el){el.value=state[id];el.addEventListener("change",()=>{state[id]=el.type==="number"?Number(el.value):el.value;refresh()});if(el.type!=="number")el.addEventListener("input",()=>{state[id]=el.value;save()})}
 });
 refresh();
-$("clearAll").onclick=()=>{if(!confirm("Удалить все настройки и вопросы этого проекта?"))return;localStorage.removeItem(STORE);location.reload()};
-$("empty").onclick=()=>{if(!valid()){notice("status","Сначала исправь количество вопросов.","err");return}renderEditor();notice("status","Поля готовы. Заполняй вопросы и ответы.","ok")};
+$("empty").onclick=()=>{if(!valid()){notice("status","Сначала исправь количество вопросов.","err");return}renderEditor();goStep(2);notice("editorStatus","Открой тему и введи вопросы.","ok")};
 $("clearQuestions").onclick=()=>{if(!confirm("Удалить все введённые вопросы и ответы?"))return;state.categories.forEach(c=>c.qs.forEach(q=>{q[0]="";q[1]=""}));renderEditor();save();notice("status","Вопросы удалены.","ok")};
 $("demo").onclick=()=>{
 if(!valid()){notice("status","Сначала выбери число вопросов, кратное числу тем.","err");return}
