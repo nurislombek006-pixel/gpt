@@ -89,6 +89,67 @@ try{localStorage.setItem(LAYOUT_KEY,mode)}catch(e){}
 document.querySelectorAll("[data-layout]").forEach(btn=>btn.onclick=()=>setLayout(btn.dataset.layout));
 setLayout(localStorage.getItem(LAYOUT_KEY)||"auto");
 
+let cloudUnlocked=false,cloudBusy=false;
+function openCloud(){
+cloudUnlocked=false;
+$("cloudModal").hidden=false;
+$("cloudPassword").value="";
+$("newGamePassword").value="";
+$("cloudError").textContent="";
+$("cloudAuthStage").hidden=false;
+$("cloudNewStage").hidden=true;
+$("cloudSubmit").textContent="Подтвердить";
+$("cloudDescription").textContent="Введи облачный пароль, чтобы изменить пароль ответов.";
+$("cloudPassword").focus();
+}
+function closeCloud(){
+if(cloudBusy)return;
+$("cloudModal").hidden=true;
+cloudUnlocked=false;
+$("cloudPassword").value="";
+$("newGamePassword").value="";
+}
+$("changePassword").onclick=openCloud;
+$("cloudClose").onclick=closeCloud;
+$("cloudModal").addEventListener("click",e=>{if(e.target===$("cloudModal"))closeCloud()});
+document.addEventListener("keydown",e=>{if(e.key==="Escape"&&!$("cloudModal").hidden)closeCloud()});
+$("cloudForm").onsubmit=async e=>{
+e.preventDefault();
+if(cloudBusy)return;
+$("cloudError").textContent="";
+if(cloudUnlocked){
+const next=$("newGamePassword").value.trim();
+if(!next||next.length>40){$("cloudError").textContent="Пароль должен содержать от 1 до 40 символов.";return}
+state.password=next;
+$("password").value=next;
+save();
+closeCloud();
+notice("status","Пароль для ответов изменён. Он будет включён в новые файлы index.html.","ok");
+return;
+}
+const password=$("cloudPassword").value;
+if(!password){$("cloudError").textContent="Введи облачный пароль.";return}
+let base=String(state.apiUrl||"").trim().replace(/\/+$/,"");
+if(!base)base=location.origin;
+const url=base.endsWith("/api/generate")?base.replace(/\/api\/generate$/,"/api/verify-cloud-password"):base+"/api/verify-cloud-password";
+cloudBusy=true;$("cloudSubmit").disabled=true;
+try{
+const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
+let response;
+try{response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password}),cache:"no-store",signal:controller.signal})}finally{clearTimeout(timer)}
+const data=await response.json();
+if(!response.ok||data.ok!==true){$("cloudError").textContent=data.error||"Неверный облачный пароль.";return}
+cloudUnlocked=true;
+$("cloudAuthStage").hidden=true;$("cloudNewStage").hidden=false;
+$("cloudSubmit").textContent="Сохранить пароль";
+$("cloudDescription").textContent="Подтверждено. Теперь задай новый пароль для ответов.";
+$("newGamePassword").value=state.password;
+$("newGamePassword").focus();
+}catch(err){$("cloudError").textContent=err.name==="AbortError"?"Сервер долго не отвечает.":"Не удалось проверить пароль в облаке."}
+finally{cloudBusy=false;$("cloudSubmit").disabled=false}
+};
+
+
 $("empty").onclick=()=>{if(!valid()){notice("status","Сначала исправь количество вопросов.","err");return}renderEditor();goStep(2);notice("editorStatus","Открой тему и введи вопросы.","ok")};
 $("clearQuestions").onclick=()=>{if(!confirm("Удалить все введённые вопросы и ответы?"))return;state.categories.forEach(c=>c.qs.forEach(q=>{q[0]="";q[1]=""}));renderEditor();save();notice("editorStatus","Вопросы удалены.","ok")};
 $("demo").onclick=()=>{
