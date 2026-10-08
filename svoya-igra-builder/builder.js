@@ -30,25 +30,25 @@ function valid(){return state.questionsCount%state.topicsCount===0&&state.questi
 function notice(id,text,type){const x=$(id);x.textContent=text;x.className="status "+(type||"note")}
 function distribution(){
 const d=$("distribution"),s=$("suggestion"),n=state.topicsCount,q=state.questionsCount; s.replaceChildren();
-if(valid()){d.className="num-preview valid";d.textContent=n+" тем × "+(q/n)+" вопросов = "+q+" всего. Баллы: 100, 200, …, "+(q/n*100)+". Команд: "+state.teamsCount+".";return}
-d.className="num-preview";d.textContent="⚠ "+q+" вопросов нельзя поровну разделить на "+n+" тем. Выбери подходящее количество:";
+if(valid()){d.className="distribution";d.textContent=n+" тем × "+(q/n)+" вопросов = "+q+" всего. Баллы: 100, 200, …, "+(q/n*100)+". Команд: "+state.teamsCount+".";return}
+d.className="distribution warn";d.textContent="⚠ "+q+" вопросов нельзя поровну разделить на "+n+" тем. Выбери подходящее количество:";
 const down=Math.floor(q/n)*n,up=Math.ceil(q/n)*n;
 Array.from(new Set([down,up])).filter(v=>v>=n&&v<=120&&v/n<=20).forEach(v=>{const btn=document.createElement("button");btn.textContent=v+" всего ("+(v/n)+" в теме)";btn.type="button";btn.onclick=()=>{state.questionsCount=v;normalize();$("questionsCount").value=v;save();refresh()};s.append(btn)});
 }
 function renderTopics(){
-const host=$("topicList");host.replaceChildren();
+const host=$("topicList");host.replaceChildren();$("topicsHint").textContent=state.topicsCount+" шт.";
 state.categories.forEach((cat,i)=>{
 const item=document.createElement("div");item.className="topic-item";
-const n=document.createElement("span");n.className="topic-index";n.textContent="КАТЕГОРИЯ "+(i+1);
-const inp=document.createElement("input");inp.className="input";inp.value=cat.name;inp.maxLength=100;inp.placeholder="Название темы "+(i+1);inp.setAttribute("aria-label","Название темы "+(i+1));
+const n=document.createElement("span");n.className="num";n.textContent=i+1;
+const inp=document.createElement("input");inp.className="control";inp.value=cat.name;inp.maxLength=100;inp.placeholder="Название темы "+(i+1);inp.setAttribute("aria-label","Название темы "+(i+1));
 inp.addEventListener("input",()=>{cat.name=inp.value;save();const h=document.getElementById("heading-"+i);if(h)h.textContent=cat.name||"Тема "+(i+1)});
 const small=document.createElement("small");small.className="info";small.textContent="Вопросов: "+cat.qs.length;
-item.append(n,inp,small);host.append(item);
+item.append(n,inp);host.append(item);
 });
 }
 function textarea(label,value,onchange,cls){
 const lab=document.createElement("label");lab.textContent=label;
-const t=document.createElement("textarea");t.value=value;t.className=cls||"";t.addEventListener("input",()=>onchange(t.value));
+const t=document.createElement("textarea");t.value=value;t.className="control";t.rows=cls?2:3;t.addEventListener("input",()=>onchange(t.value));
 return [lab,t];
 }
 function renderEditor(){
