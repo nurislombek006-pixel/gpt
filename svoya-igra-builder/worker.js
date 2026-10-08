@@ -48,7 +48,7 @@ export default {
     const url=new URL(req.url),path=url.pathname;
     const origin=req.headers.get("origin")||"";
     const trusted=origin===""||origin===url.origin||ALLOWED.has(origin);
-    if(path==="/health")return reply({ok:true,ai:!!env.AI},200,trusted?origin:"");
+    if(path==="/health")return reply({ok:true,ai:!!env.AI,geminiConfigured:!!env.GEMINI_API_KEY,model:env.GEMINI_API_KEY?"Gemini 3.5 Flash-Lite":"Cloudflare Llama fallback"},200,trusted?origin:"");
 
     if(path==="/api/verify-cloud-password"){
       if(!trusted)return reply({error:"Недопустимый источник."},403);
