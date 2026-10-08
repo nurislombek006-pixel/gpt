@@ -18,6 +18,31 @@ function extract(text){
   if(start>=0&&end>start)return JSON.parse(clean.slice(start,end+1));
   throw new Error("ИИ не вернул корректный JSON.");
 }
+
+async function callGemini(env,system,user,expected){
+  const schema={
+    type:"OBJECT",
+    properties:{
+      items:{type:"ARRAY",items:{type:"OBJECT",
+        properties:{question:{type:"STRING"},answer:{type:"STRING"}},
+        required:["question","answer"]}}
+    },
+    required:["items"]
+  };
+  const response=await fetch(
+    "https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent",
+    {method:"POST",headers:{"content-type":"application/json","x-goog-api-key":env.GEMINI_API_KEY},
+      body:JSON.stringify({
+        contents:[{role:"user",parts:[{text:system+"\n\n"+user+"\n\nКоличество вопросов: "+expected}]}],
+        generationConfig:{temperature:0.35,maxOutputTokens:2048,responseMimeType:"application/json",responseSchema:schema}
+      })}
+  );
+  if(!response.ok)throw new Error("Gemini API HTTP "+response.status);
+  const payload=await response.json();
+  const text=payload?.candidates?.[0]?.content?.parts?.map(p=>p.text||"").join("")||"";
+  return extract(text);
+}
+
 export default {
   async fetch(req,env){
     const url=new URL(req.url),path=url.pathname;
@@ -87,11 +112,23 @@ export default {
           "Если информации из текста недостаточно, составляй вопросы по остальным содержащимся фактам и избегай спорных цифр."
         ].join(" ");
         const user=JSON.stringify({category,subject,difficulty,number,first_level:offset+1,source:source||"(материал не приложен, используй общие знания)",avoid});
-        const result=await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8",{
-          messages:[{role:"system",content:system},{role:"user",content:user}],
-          max_tokens:1850,temperature:0.35,top_p:0.9
-        });
-        const parsed=extract(result?.response??result);
+        let parsed,model="Cloudflare Llama 3.1 8B";
+        if(env.GEMINI_API_KEY){
+          try{
+            parsed=await callGemini(env,system,user,number);
+            model="Gemini 3.5 Flash-Lite";
+          }catch(e){
+            // The free Gemini quota may be unavailable. Keep the quiz usable.
+            console.warn("Gemini unavailable; using Cloudflare AI",String(e).slice(0,100));
+          }
+        }
+        if(!parsed){
+          const result=await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8",{
+            messages:[{role:"system",content:system},{role:"user",content:user}],
+            max_tokens:1850,temperature:0.35,top_p:0.9
+          });
+          parsed=extract(result?.response??result);
+        }
         let items=Array.isArray(parsed.items)?parsed.items:[];
         items=items.map(x=>({question:String(x.question||"").trim().slice(0,350),answer:String(x.answer||"").trim().slice(0,450)})).filter(x=>x.question&&x.answer);
         if(items.length<number){
@@ -120,7 +157,7 @@ export default {
             if(!added)break;
           }
         }
-        return reply({items:items.slice(0,number),partial:items.length<number,model:"Cloudflare Workers AI"},200,origin||url.origin);
+        return reply({items:items.slice(0,number),partial:items.length<number,model},200,origin||url.origin);
       }catch(e){return reply({error:e instanceof SyntaxError?"Некорректный JSON запроса.":"Ошибка генерации: "+String(e?.message||e).slice(0,150)},502,origin||url.origin)}
     }
     if(req.method!=="GET"&&req.method!=="HEAD")return new Response("Method not allowed",{status:405});
