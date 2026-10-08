@@ -3,9 +3,9 @@
 const $=id=>document.getElementById(id);
 const STORE="svoya-builder-project-v2";
 // Compact workflow
-const initial=()=>({title:"Своя игра — Экономика",topicsCount:5,questionsCount:25,teamsCount:3,password:"2611",subject:"",source:"",difficulty:"постепенно усложняющиеся",apiUrl:"https://svoya-game-ai-builder.masterofluck112-apps.workers.dev",categories:Array.from({length:5},(_,i)=>({name:"Тема "+(i+1),qs:Array.from({length:5},()=>["",""])}))});
+const initial=()=>({title:"Своя игра — Экономика",topicsCount:5,questionsCount:25,teamsCount:3,password:"20062611",subject:"",source:"",difficulty:"постепенно усложняющиеся",apiUrl:"https://svoya-game-ai-builder.masterofluck112-apps.workers.dev",categories:Array.from({length:5},(_,i)=>({name:"Тема "+(i+1),qs:Array.from({length:5},()=>["",""])}))});
 let state=initial();
-try{let loaded=JSON.parse(localStorage.getItem(STORE)||"null");if(loaded&&typeof loaded==="object"&&Array.isArray(loaded.categories))state=Object.assign(initial(),loaded)}catch(e){}
+try{let loaded=JSON.parse(localStorage.getItem(STORE)||"null");if(loaded&&typeof loaded==="object"&&Array.isArray(loaded.categories))state=Object.assign(initial(),loaded);if(state.password==="2611")state.password="20062611"}catch(e){}
 let generating=false;
 const values=["title","password","topicsCount","questionsCount","teamsCount","subject","source","difficulty","apiUrl"];
 function cap(x,min,max){return Math.min(max,Math.max(min,Number(x)||min))}
@@ -75,9 +75,20 @@ updateReview();
 }
 function refresh(){normalize();distribution();renderTopics();renderEditor();save()}
 values.forEach(id=>{
-const el=$(id);if(el){el.value=state[id];el.addEventListener("change",()=>{state[id]=el.type==="number"?Number(el.value):el.value;refresh()});if(el.type!=="number")el.addEventListener("input",()=>{state[id]=el.value;save()})}
+const el=$(id);if(el){el.value=state[id];if(id==="password")return;el.addEventListener("change",()=>{state[id]=el.type==="number"?Number(el.value):el.value;refresh()});if(el.type!=="number")el.addEventListener("input",()=>{state[id]=el.value;save()})}
 });
 refresh();
+
+const LAYOUT_KEY="svoya-builder-layout";
+function setLayout(mode){
+if(!["auto","phone","laptop"].includes(mode))mode="auto";
+document.documentElement.dataset.layout=mode;
+document.querySelectorAll("[data-layout]").forEach(btn=>btn.classList.toggle("active",btn.dataset.layout===mode));
+try{localStorage.setItem(LAYOUT_KEY,mode)}catch(e){}
+}
+document.querySelectorAll("[data-layout]").forEach(btn=>btn.onclick=()=>setLayout(btn.dataset.layout));
+setLayout(localStorage.getItem(LAYOUT_KEY)||"auto");
+
 $("empty").onclick=()=>{if(!valid()){notice("status","Сначала исправь количество вопросов.","err");return}renderEditor();goStep(2);notice("editorStatus","Открой тему и введи вопросы.","ok")};
 $("clearQuestions").onclick=()=>{if(!confirm("Удалить все введённые вопросы и ответы?"))return;state.categories.forEach(c=>c.qs.forEach(q=>{q[0]="";q[1]=""}));renderEditor();save();notice("editorStatus","Вопросы удалены.","ok")};
 $("demo").onclick=()=>{
