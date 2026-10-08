@@ -141,4 +141,27 @@ const win=window.open("about:blank","_blank");try{const html=await makeHtml();co
 };
 $("jsonExport").onclick=()=>{save();downloadBlob(JSON.stringify(state,null,2),"svoya-igra-project.json","application/json;charset=utf-8");notice("exportStatus","Проект JSON сохранён.","ok")};
 $("jsonImport").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{if(f.size>3000000)throw Error("Слишком большой файл JSON.");const json=JSON.parse(await f.text());if(!json||!Array.isArray(json.categories))throw Error("Это не проект «Своя игра».");state=Object.assign(initial(),json);normalize();values.forEach(id=>$(id).value=state[id]);refresh();notice("exportStatus","Проект импортирован.","ok")}catch(err){notice("exportStatus",err.message,"err")}e.target.value=""});
+let activeStep=1;
+function updateReview(){
+ const total=state.categories.reduce((n,c)=>n+c.qs.length,0),ready=state.categories.reduce((n,c)=>n+c.qs.filter(q=>q[0].trim()&&q[1].trim()).length,0);
+ $("reviewCount").textContent=ready+" из "+total+" заполнено";
+ $("meterFill").style.width=(total?ready/total*100:0)+"%";
+ return ready===total;
+}
+function goStep(n){
+ if(generating&&n!==2)return;
+ if(n>1&&!valid()){notice("status","Число вопросов должно делиться на число тем.","err");return}
+ if(n===3&&!updateReview()){n=2;notice("editorStatus","Заполни вопросы и ответы.","err")}
+ activeStep=n;
+ for(let k=1;k<=3;k++)$("step"+k).hidden=k!==n;
+ document.querySelectorAll("[data-step]").forEach(b=>b.classList.toggle("active",Number(b.dataset.step)===n));
+ if(n===2){renderEditor();updateReview()}
+ if(n===3)$("finalSummary").textContent=state.topicsCount+" тем · "+state.questionsCount+" вопросов · "+state.teamsCount+" команд";
+ window.scrollTo({top:0,behavior:"smooth"});
+}
+document.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>goStep(Number(b.dataset.step)));
+$("backSettings").onclick=()=>goStep(1);
+$("goExport").onclick=()=>goStep(3);
+$("backEditor").onclick=()=>goStep(2);
+
 })();
