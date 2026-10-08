@@ -2,6 +2,7 @@
 (function(){
 const $=id=>document.getElementById(id);
 const STORE="svoya-builder-project-v2";
+// Compact workflow
 const initial=()=>({title:"Своя игра — Экономика",topicsCount:5,questionsCount:25,teamsCount:3,password:"2611",subject:"",source:"",difficulty:"постепенно усложняющиеся",apiUrl:"https://svoya-game-ai-builder.masterofluck112-apps.workers.dev",categories:Array.from({length:5},(_,i)=>({name:"Тема "+(i+1),qs:Array.from({length:5},()=>["",""])}))});
 let state=initial();
 try{let loaded=JSON.parse(localStorage.getItem(STORE)||"null");if(loaded&&typeof loaded==="object"&&Array.isArray(loaded.categories))state=Object.assign(initial(),loaded)}catch(e){}
