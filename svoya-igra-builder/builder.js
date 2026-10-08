@@ -27,7 +27,7 @@ cat.qs=cat.qs.slice(0,levels).map(pair);
 });
 }
 function valid(){return state.questionsCount%state.topicsCount===0&&state.questionsCount/state.topicsCount<=20}
-function notice(id,text,type){const x=$(id);x.textContent=text;x.className="status "+(type||"note")}
+function notice(id,text,type){const x=$(id);x.textContent=text;x.className="status "+({err:"error",ok:"success",note:"info"}[type]||"info")}
 function distribution(){
 const d=$("distribution"),s=$("suggestion"),n=state.topicsCount,q=state.questionsCount; s.replaceChildren();
 if(valid()){d.className="distribution";d.textContent=n+" тем × "+(q/n)+" вопросов = "+q+" всего. Баллы: 100, 200, …, "+(q/n*100)+". Команд: "+state.teamsCount+".";return}
@@ -38,7 +38,7 @@ Array.from(new Set([down,up])).filter(v=>v>=n&&v<=120&&v/n<=20).forEach(v=>{cons
 function renderTopics(){
 const host=$("topicList");host.replaceChildren();$("topicsHint").textContent=state.topicsCount+" шт.";
 state.categories.forEach((cat,i)=>{
-const item=document.createElement("div");item.className="topic-item";
+const item=document.createElement("div");item.className="topic";
 const n=document.createElement("span");n.className="num";n.textContent=i+1;
 const inp=document.createElement("input");inp.className="control";inp.value=cat.name;inp.maxLength=100;inp.placeholder="Название темы "+(i+1);inp.setAttribute("aria-label","Название темы "+(i+1));
 inp.addEventListener("input",()=>{cat.name=inp.value;save();const h=document.getElementById("heading-"+i);if(h)h.textContent=cat.name||"Тема "+(i+1)});
@@ -57,7 +57,7 @@ if(!valid()){host.textContent="Сначала выбери количество 
 state.categories.forEach((cat,i)=>{
 const panel=document.createElement("details");panel.className="q-group";panel.dataset.index=String(i);panel.open=opened.has(String(i));const head=document.createElement("summary");
 const h=document.createElement("h3");h.id="heading-"+i;h.className="qname";h.textContent=cat.name||"Тема "+(i+1);
-const meta=document.createElement("span");meta.className="qcount";meta.textContent=cat.qs.length+" вопросов · "+(cat.qs.length*100)+" макс. баллов";head.append(h,meta);panel.append(head);
+const meta=document.createElement("span");meta.className="qcount";meta.textContent=cat.qs.filter(q=>q[0].trim()&&q[1].trim()).length+" / "+cat.qs.length;head.append(h,meta);panel.append(head);
 const grid=document.createElement("div");grid.className="q-body";
 cat.qs.forEach((pair,j)=>{
 const card=document.createElement("div");card.className="q-card";
@@ -65,7 +65,7 @@ const top=document.createElement("div");top.className="q-head";
 const num=document.createElement("span");num.textContent="ВОПРОС "+(j+1);
 const pts=document.createElement("span");pts.textContent=(j+1)*100+" баллов";top.append(num,pts);card.append(top);
 for(const [label,value,k,cl] of [["Текст вопроса",pair[0],0,""],["Правильный ответ",pair[1],1,"answer-input"]]){
-const parts=textarea(label,value,v=>{cat.qs[j][k]=v;save();updateReview()},cl);card.append(...parts)
+const parts=textarea(label,value,v=>{cat.qs[j][k]=v;save();updateReview();meta.textContent=cat.qs.filter(q=>q[0].trim()&&q[1].trim()).length+" / "+cat.qs.length},cl);card.append(...parts)
 }
 grid.append(card);
 });
@@ -98,7 +98,7 @@ if(!/^https?:\/\//i.test(base))throw Error("Укажи URL ИИ-сервера, 
 return base.endsWith("/api/generate")?base:base+"/api/generate"
 }
 async function generate(){
-if(generating)return;if(!valid()){notice("editorStatus","Исправь распределение вопросов перед генерацией.","err");return}
+if(generating)return;if(!valid()){notice("status","Исправь распределение вопросов перед генерацией.","err");return}
 if(state.categories.some(c=>c.qs.some(q=>q[0]||q[1]))&&!confirm("ИИ заменит все заполненные вопросы. Продолжить?"))return;
 let url;try{url=endpoint()}catch(e){notice("editorStatus",e.message,"err");return}
 goStep(2);generating=true;$("generate").disabled=true;$("regenerate").disabled=true;
@@ -141,7 +141,7 @@ $("preview").onclick=async()=>{
 const win=window.open("about:blank","_blank");try{const html=await makeHtml();const url=URL.createObjectURL(new Blob([html],{type:"text/html;charset=utf-8"}));if(win)win.location.href=url;else notice("exportStatus","Разреши всплывающие окна в браузере.","err");setTimeout(()=>URL.revokeObjectURL(url),60000)}catch(e){if(win)win.close();notice("exportStatus",e.message,"err")}
 };
 $("jsonExport").onclick=()=>{save();downloadBlob(JSON.stringify(state,null,2),"svoya-igra-project.json","application/json;charset=utf-8");notice("exportStatus","Проект JSON сохранён.","ok")};
-$("jsonImport").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{if(f.size>3000000)throw Error("Слишком большой файл JSON.");const json=JSON.parse(await f.text());if(!json||!Array.isArray(json.categories))throw Error("Это не проект «Своя игра».");state=Object.assign(initial(),json);normalize();values.forEach(id=>$(id).value=state[id]);refresh();notice("exportStatus","Проект импортирован.","ok")}catch(err){notice("exportStatus",err.message,"err")}e.target.value=""});
+$("jsonImport").addEventListener("change",async e=>{const f=e.target.files[0];if(!f)return;try{if(f.size>3000000)throw Error("Слишком большой файл JSON.");const json=JSON.parse(await f.text());if(!json||!Array.isArray(json.categories))throw Error("Это не проект «Своя игра».");state=Object.assign(initial(),json);normalize();values.forEach(id=>$(id).value=state[id]);refresh();goStep(1);notice("status","Проект импортирован.","ok")}catch(err){notice("exportStatus",err.message,"err")}e.target.value=""});
 let activeStep=1;
 function updateReview(){
  const total=state.categories.reduce((n,c)=>n+c.qs.length,0),ready=state.categories.reduce((n,c)=>n+c.qs.filter(q=>q[0].trim()&&q[1].trim()).length,0);
