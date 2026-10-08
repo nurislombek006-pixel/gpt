@@ -52,25 +52,26 @@ const t=document.createElement("textarea");t.value=value;t.className="control";t
 return [lab,t];
 }
 function renderEditor(){
-const host=$("editor");host.replaceChildren();
-if(!valid()){host.textContent="Сначала выбери количество вопросов, которое делится на число тем.";host.className="help";return}host.className="";
+const host=$("editor");const opened=new Set([...host.querySelectorAll("details[open]")].map(d=>d.dataset.index));host.replaceChildren();
+if(!valid()){host.textContent="Сначала выбери количество вопросов, которое делится на число тем.";return}
 state.categories.forEach((cat,i)=>{
-const head=document.createElement("div");head.className="section-head";
-const h=document.createElement("h3");h.id="heading-"+i;h.textContent=cat.name||"Тема "+(i+1);
-const meta=document.createElement("span");meta.className="editor-meta";meta.textContent=cat.qs.length+" вопросов · "+(cat.qs.length*100)+" макс. баллов";head.append(h,meta);host.append(head);
-const grid=document.createElement("div");grid.className="question-grid";
+const panel=document.createElement("details");panel.className="q-group";panel.dataset.index=String(i);panel.open=opened.has(String(i));const head=document.createElement("summary");
+const h=document.createElement("h3");h.id="heading-"+i;h.className="qname";h.textContent=cat.name||"Тема "+(i+1);
+const meta=document.createElement("span");meta.className="qcount";meta.textContent=cat.qs.length+" вопросов · "+(cat.qs.length*100)+" макс. баллов";head.append(h,meta);panel.append(head);
+const grid=document.createElement("div");grid.className="q-body";
 cat.qs.forEach((pair,j)=>{
-const card=document.createElement("div");card.className="question-card";
-const top=document.createElement("div");top.className="question-top";
+const card=document.createElement("div");card.className="q-card";
+const top=document.createElement("div");top.className="q-head";
 const num=document.createElement("span");num.textContent="ВОПРОС "+(j+1);
 const pts=document.createElement("span");pts.textContent=(j+1)*100+" баллов";top.append(num,pts);card.append(top);
 for(const [label,value,k,cl] of [["Текст вопроса",pair[0],0,""],["Правильный ответ",pair[1],1,"answer-input"]]){
-const parts=textarea(label,value,v=>{cat.qs[j][k]=v;save()},cl);card.append(...parts)
+const parts=textarea(label,value,v=>{cat.qs[j][k]=v;save();updateReview()},cl);card.append(...parts)
 }
 grid.append(card);
 });
-host.append(grid);
+panel.append(grid);host.append(panel);
 });
+updateReview();
 }
 function refresh(){normalize();distribution();renderTopics();renderEditor();save()}
 values.forEach(id=>{
