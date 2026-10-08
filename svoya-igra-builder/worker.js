@@ -98,7 +98,7 @@ export default {
           // The 8B model sometimes generates one item even when asked for five.
           // Preserve existing items, generate each missing item and return partial
           // results instead of failing the whole client request.
-          const oneSystem="Ты автор игры «Своя игра». Верни ровно ОДИН новый вопрос на русском. Только JSON: {\\\"items\\\":[{\\\"question\\\":\\\"...\\\",\\\"answer\\\":\\\"...\\\"}]}";
+          const oneSystem='Ты автор игры «Своя игра». Верни ровно ОДИН новый вопрос на русском. Только JSON: {"items":[{"question":"...","answer":"..."}]}';
           for(let missing=items.length;missing<number;missing++){
             let added=false;
             for(let retry=0;retry<3&&!added;retry++){
