@@ -1,31 +1,95 @@
 <!doctype html>
-<html lang="ru"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="theme-color" content="#08152a"><title>Конструктор «Своя игра» — ИИ и HTML</title>
+<html lang="ru">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#0b1022">
+<title>Своя игра — конструктор с ИИ</title>
 <style>
-:root{color-scheme:dark;--bg:#081426;--panel:#122643;--panel2:#162f50;--line:#315476;--muted:#9cb3d2;--gold:#ffe19a;--white:#f7f9fe;--green:#5fe1b5;--red:#ff93a6}
-*{box-sizing:border-box}body{margin:0;color:var(--white);background:radial-gradient(ellipse at 50% -30%,#264f80 0%,transparent 48%),radial-gradient(circle at 110% 60%,#10284a,transparent 35%),var(--bg);font:15px/1.5 Inter,system-ui,Arial,sans-serif;min-height:100vh}button,input,textarea,select{font:inherit}button{cursor:pointer}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--gold);outline-offset:2px}h1{font-size:clamp(36px,5.3vw,64px);letter-spacing:-.055em;line-height:1.07;margin:13px 0}h1 span{color:var(--gold)}h2{font-size:22px;letter-spacing:-.035em;margin:0 0 8px}.eyebrow{color:var(--gold);font-size:12px;letter-spacing:.15em;font-weight:900;text-transform:uppercase}.lead{color:var(--muted);font-size:15px;max-width:740px}.layout{max-width:1460px;margin:auto;padding:25px clamp(13px,3vw,38px)}header{padding:17px 0 29px;display:flex;gap:25px;align-items:center;justify-content:space-between}.hero-icon{font-size:79px;line-height:1;filter:drop-shadow(0 10px 22px #ffc34926)}.steps{display:flex;gap:9px;flex-wrap:wrap;color:#bbcde4;font-size:13px;font-weight:700;margin:22px 0}.steps span{border:1px solid #365679;border-radius:50px;padding:7px 12px;background:#ffffff08}.steps b{color:var(--gold)}.panel{border:1px solid #325273;border-radius:21px;padding:clamp(17px,2.4vw,28px);background:linear-gradient(150deg,#152c49f5,#0c1c33f5);margin:17px 0;box-shadow:0 12px 35px #0002}.panelhead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:21px}.help{color:var(--muted);font-size:13px;margin:4px 0 0}.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}.field{display:flex;flex-direction:column;gap:7px;min-width:0}.field.wide{grid-column:span 3}.field.half{grid-column:span 2}label{font-size:13px;font-weight:760;color:#dbe6f6}.input,textarea,select{width:100%;min-width:0;border:1px solid #476485;border-radius:12px;padding:12px 13px;background:#071b32;color:#f6faff;outline:none;transition:border-color .15s}.input:focus,textarea:focus,select:focus{border-color:#d9b75f}textarea{min-height:100px;resize:vertical;line-height:1.5}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;padding:12px 17px;background:#1a3b62;color:#fff;border:1px solid #42668a;border-radius:12px;font-weight:850;transition:transform .14s,background .14s}.btn:hover:not(:disabled){background:#27507c;transform:translateY(-2px)}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.primary{background:linear-gradient(135deg,#ffe8ab,#efbe4e);border-color:#efcc68;color:#16283d}.btn.ai{background:linear-gradient(115deg,#6968ca,#3c73ba);border-color:#829af3}.btn.outline{background:transparent}.actions{display:flex;flex-wrap:wrap;gap:11px;margin-top:19px}.num-preview{border:1px solid #887343;background:#d6ae4421;padding:12px 16px;border-radius:13px;color:#f9e6b6;margin-top:14px;font-weight:760}.num-preview.valid{border-color:#368b7c;background:#14836625;color:#7cf0cb}.suggest{display:flex;align-items:center;gap:9px;flex-wrap:wrap;margin-top:9px}.suggest button{padding:7px 12px;background:#233f65;color:var(--gold);border:1px solid #77633c;border-radius:9px}.topic-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:13px}.topic-item{display:grid;gap:6px;padding:12px;border:1px solid #365677;background:#0c213c;border-radius:13px}.topic-index{color:#8baed8;font-size:11px;font-weight:900;letter-spacing:.1em}.info{font-size:12px;color:#a8c0dc}.editor-meta{font-size:13px;color:var(--muted)}.section-head{display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;border-top:1px solid #2f5071;padding-top:19px;margin:21px 0 12px}.section-head:first-of-type{border-top:none}.section-head h3{font-size:17px;margin:0}.question-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(270px,1fr));gap:10px}.question-card{padding:14px;background:#0b2039;border:1px solid #315578;border-radius:14px}.question-top{color:var(--gold);font-weight:900;font-size:12px;margin-bottom:9px;display:flex;justify-content:space-between}.question-card textarea{min-height:78px;font-size:13px}.question-card label{font-size:11px;text-transform:uppercase;letter-spacing:.05em;color:#a4bddb;margin-top:6px;display:block}.answer-input{min-height:66px!important}.footer{font-size:13px;text-align:center;color:#849bb8;margin:32px 0}.status{font-size:13px;min-height:24px;line-height:1.5}.status.ok{color:var(--green)}.status.err{color:var(--red)}.status.note{color:var(--gold)}.aside{color:var(--muted);font-size:12px}.file-name{margin-top:6px;color:#bcd8ef;font-size:13px}details{background:#0b1e35;border:1px solid #365477;border-radius:13px;padding:15px;margin-top:13px}summary{font-weight:800;cursor:pointer}.overlay{display:none;position:fixed;inset:0;background:#020c1ceb;z-index:40;align-items:center;justify-content:center;padding:12px}.overlay.open{display:flex}.dialog{background:#112d4d;border:1px solid #597eab;border-radius:20px;max-width:600px;width:100%;padding:24px;max-height:90vh;overflow:auto}.dialog h2{margin-bottom:13px}.dialog p{color:#bed0e3}.bar{height:6px;background:#284a70;border-radius:20px;overflow:hidden;margin:9px 0}.bar div{background:#eec65d;height:100%;width:0%;transition:width .2s}
-@media(max-width:720px){.fields{grid-template-columns:1fr 1fr}.field.wide{grid-column:span 2}.field.half{grid-column:span 2}.hero-icon{display:none}.question-grid{grid-template-columns:1fr}.panel{padding:16px}.actions .btn{flex:1 1 160px}}@media(max-width:410px){.fields{grid-template-columns:1fr}.field,.field.wide,.field.half{grid-column:span 1}.topic-list{grid-template-columns:1fr}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style></head>
-<body><div class="layout"><header><div><div class="eyebrow">Генератор учебных викторин</div><h1>СОЗДАЙ <span>СВОЮ ИГРУ.</span></h1><p class="lead">Настрой темы, количество команд и вопросов. Напиши вопросы сам или сгенерируй их с помощью ИИ. Потом скачай готовый <strong>index.html</strong> — он работает без интернета.</p><div class="steps"><span><b>01</b> Настройка</span><span><b>02</b> Вопросы / ИИ</span><span><b>03</b> Скачать HTML</span></div></div><div class="hero-icon" aria-hidden="true">🎯</div></header>
-<section class="panel"><div class="panelhead"><div><h2>1. Параметры игры</h2><p class="help">Число вопросов должно делиться на число тем — тогда везде одинаковое количество уровней.</p></div><button id="clearAll" class="btn outline">Очистить проект</button></div><div class="fields">
-<div class="field half"><label for="title">Название игры</label><input id="title" class="input" value="Своя игра — Экономика" maxlength="110"></div>
-<div class="field"><label for="password">Пароль для ответов</label><input id="password" class="input" value="2611" maxlength="40"></div>
-<div class="field"><label for="topicsCount">Количество тем</label><input id="topicsCount" class="input" type="number" min="1" max="12" value="5"></div>
-<div class="field"><label for="questionsCount">Всего вопросов</label><input id="questionsCount" class="input" type="number" min="1" max="120" value="25"></div>
-<div class="field"><label for="teamsCount">Количество команд</label><input id="teamsCount" class="input" type="number" min="1" max="10" value="3"></div>
-</div><div id="distribution" class="num-preview valid" aria-live="polite"></div><div id="suggestion" class="suggest"></div></section>
-<section class="panel"><div class="panelhead"><div><h2>2. Темы и материал</h2><p class="help">Напиши названия категорий. Для ИИ можно добавить общий предмет, текст лекции или конспект.</p></div></div>
-<div class="topic-list" id="topicList"></div><div class="fields" style="margin-top:18px">
-<div class="field half"><label for="subject">Общая тема / предмет для ИИ</label><input id="subject" class="input" placeholder="Например: Глобальное экономическое развитие, иностранные инвестиции"></div>
-<div class="field"><label for="difficulty">Сложность вопросов</label><select id="difficulty"><option value="постепенно усложняющиеся">От простого к сложному</option><option value="простые">Простые</option><option value="средние">Средние</option><option value="сложные">Сложные</option></select></div>
-<div class="field wide"><label for="source">Исходный текст (необязательно)</label><textarea id="source" rows="5" placeholder="Вставь текст презентации, лекции или конспекта. ИИ должен опираться на него и не выдумывать факты..."></textarea></div>
-<div class="field wide"><label for="file">Или загрузить текстовый документ (.txt / .md)</label><input class="input" type="file" id="file" accept=".txt,.md,text/plain,text/markdown"><div id="fileName" class="file-name">Для PDF и PowerPoint можно скопировать текст слайдов в поле выше.</div></div>
-</div></section>
-<section class="panel"><div class="panelhead"><div><h2>3. Создай вопросы</h2><p class="help">В каждом уровне — свой вопрос и правильный ответ. Ты можешь изменить любой ответ, даже после генерации ИИ.</p></div></div>
-<div class="actions"><button class="btn ai" id="generate">✦ Сгенерировать ИИ</button><button class="btn" id="empty">＋ Добавить пустые поля</button><button class="btn outline" id="demo">Заполнить примерами</button><button class="btn outline" id="clearQuestions">Удалить ответы</button></div>
-<div id="status" class="status" role="status" style="margin:13px 0"></div>
-<details><summary>⚙️ Настройки ИИ (Cloudflare Workers AI)</summary><p class="help">ИИ вызывается через отдельный Cloudflare Worker, а не напрямую из браузера. Для работы нужна опубликованная серверная функция. Если страница открыта на том же домене, оставь поле пустым; иначе укажи адрес Worker (например, https://...workers.dev).</p><div class="field" style="margin-top:13px"><label for="apiUrl">Адрес ИИ-сервера</label><input id="apiUrl" class="input" placeholder="https://your-worker.your-subdomain.workers.dev" type="url"></div><p class="aside">Сам ключ не вводи. ИИ-запросы могут иметь ограничения по количеству, а при публикации публичного сервера — расходы по тарифу Cloudflare.</p></details>
-<div id="editor"></div></section>
-<section class="panel"><div class="panelhead"><div><h2>4. Готовая игра</h2><p class="help">В экспортируемый файл попадут выбранные темы, команды, вопросы, ответы, баллы и пароль. Никакого сервера для игры не требуется.</p></div></div>
-<div class="actions"><button id="download" class="btn primary">⬇ Скачать index.html</button><button id="preview" class="btn">▶ Открыть предварительный просмотр</button><button id="jsonExport" class="btn outline">↓ Сохранить проект JSON</button><label class="btn outline" style="cursor:pointer">↑ Открыть проект JSON<input type="file" id="jsonImport" accept=".json,application/json" style="display:none"></label></div><p id="exportStatus" class="status" style="margin-top:13px" role="status"></p></section>
-<div class="footer">Конструктор «Своя игра» · Все настройки сохраняются в этом браузере · AI-ответы проверяй перед использованием.</div></div>
-<script src="builder.js"></script></body></html>
+:root{color-scheme:dark;--bg:#080e1e;--card:#121d34;--card2:#17263f;--stroke:#30415d;--text:#f5f7ff;--muted:#99aac8;--accent:#ffdb80;--ok:#63e5b0;--error:#ff9dad}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;background:radial-gradient(ellipse at 55% -14%,#293b70 0,transparent 48%),var(--bg);color:var(--text);font:15px/1.5 Inter,system-ui,-apple-system,Segoe UI,Arial,sans-serif;min-height:100dvh}
+button,input,textarea,select{font:inherit}button{cursor:pointer;touch-action:manipulation}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}.shell{width:min(880px,calc(100% - 32px));margin:0 auto 55px}
+.header{width:min(880px,calc(100% - 32px));margin:0 auto;padding:25px 0 12px;display:flex;justify-content:space-between;align-items:center;gap:12px}.brand{display:flex;align-items:center;gap:10px;font-size:17px;font-weight:900;letter-spacing:-.04em}.brand-mark{width:33px;height:33px;display:grid;place-items:center;border-radius:11px;background:linear-gradient(135deg,#ffe4a2,#efb84b);color:#131d31;font-size:18px}.tag{border-radius:100px;background:#1b2c47;border:1px solid #354763;color:#b1c4e1;padding:5px 10px;font-size:11px;font-weight:800}
+.hero{padding:26px 0 17px}.eyebrow{color:var(--accent);letter-spacing:.12em;font-size:11px;font-weight:850;text-transform:uppercase}.hero h1{font-size:clamp(31px,5.7vw,48px);letter-spacing:-.05em;line-height:1.08;margin:11px 0}.hero p{color:var(--muted);margin:0;max-width:560px;font-size:14px}
+.steps{display:flex;align-items:center;gap:6px;background:#111e33;border:1px solid var(--stroke);padding:6px;border-radius:15px;margin:12px 0 22px}.step{flex:1;display:flex;align-items:center;justify-content:center;gap:7px;padding:11px 6px;border:0;border-radius:10px;background:transparent;color:#9cafcd;font-weight:800;font-size:13px}.step.active{background:#284468;color:#fff;box-shadow:0 3px 14px #0002}.step .digit{width:21px;height:21px;display:grid;place-items:center;border:1px solid currentColor;border-radius:7px;font-size:11px;opacity:.9}
+.card{border:1px solid var(--stroke);border-radius:21px;background:linear-gradient(145deg,#14213a,#0e1a2e);padding:clamp(18px,3vw,26px);margin:13px 0}.card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:17px}.card h2{font-size:19px;letter-spacing:-.03em;margin:0}.hint{font-size:12px;color:var(--muted)}.fields{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.field{min-width:0;display:flex;flex-direction:column;gap:6px}.field.wide{grid-column:1/-1}.field.two{grid-column:span 2}.field label{color:#c0d0e9;font-size:12px;font-weight:800}
+.control{width:100%;min-width:0;background:#09172c;border:1px solid #405575;color:var(--text);border-radius:12px;padding:11px 12px;outline:0;transition:border-color .15s}.control:focus{border-color:#eaca7e}textarea.control{min-height:82px;resize:vertical;line-height:1.45}.distribution{margin-top:15px;padding:11px 13px;border:1px solid #395b6d;background:#11352d74;color:#91eac1;border-radius:12px;font-size:13px;font-weight:700}.distribution.warn{border-color:#775f3b;background:#4b3c1840;color:#f4ce80}.suggestions{display:flex;gap:7px;flex-wrap:wrap;margin-top:8px}.suggestions button{border:1px solid #715c35;background:#3e3424;color:#ffe7a2;border-radius:9px;padding:7px 12px;font-weight:750}
+.topics{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.topic{display:flex;align-items:center;gap:9px;min-width:0}.num{flex-shrink:0;width:28px;height:28px;border-radius:9px;background:#263f62;display:grid;place-items:center;color:#bad0ef;font-weight:900;font-size:12px}
+details.settings{border-top:1px solid var(--stroke);margin-top:20px;padding-top:15px}summary{cursor:pointer;font-weight:800;list-style:none;display:flex;align-items:center;justify-content:space-between}summary::-webkit-details-marker{display:none}summary .chevron{color:var(--muted)}details[open] summary .chevron{transform:rotate(180deg)}.extra{padding:15px 0 0;display:grid;gap:13px}.extra-note{font-size:12px;color:var(--muted)}
+.actions{display:flex;gap:10px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;gap:7px;border-radius:12px;padding:12px 16px;font-weight:850;color:#fff;border:1px solid #426080;background:#1b3555;transition:background .14s,transform .14s}.btn:hover:not(:disabled){background:#2b4b74;transform:translateY(-1px)}.btn:disabled{opacity:.45;cursor:not-allowed}.btn.primary{background:linear-gradient(125deg,#ffe7a7,#efbd51);border:1px solid #f0c76b;color:#1b2838}.btn.ai{background:linear-gradient(125deg,#5c60be,#4168b1);border-color:#7c8bd6}.btn.ghost{background:transparent}.btn.small{font-size:12px;padding:8px 11px}.bottom{margin:18px 0;display:flex;gap:9px;justify-content:flex-end;flex-wrap:wrap}
+.status{min-height:0;font-size:13px;line-height:1.5;margin:10px 0}.status:empty{display:none}.status.error{color:var(--error)}.status.success{color:var(--ok)}.status.info{color:#f4d28c}
+.question-list{display:grid;gap:10px;margin-top:18px}.q-group{border:1px solid #344764;border-radius:13px;overflow:hidden;background:#0e1c31}.q-group summary{padding:14px 16px;display:flex;align-items:center;gap:11px}.q-group[open]{border-color:#617397}.q-group .qname{flex:1;font-size:14px;white-space:nowrap;text-overflow:ellipsis;overflow:hidden}.qcount{color:#a6bada;font-size:12px;flex-shrink:0}.q-body{padding:0 14px 14px;display:grid;gap:10px}.q-card{border:1px solid #2d4260;border-radius:12px;background:#112641;padding:13px}.q-head{display:flex;justify-content:space-between;font-size:12px;font-weight:850;color:#ffda7b;margin-bottom:9px}.q-fields{display:grid;grid-template-columns:1fr;gap:10px}.q-fields .control{min-height:65px;font-size:13px}.review{display:flex;align-items:center;gap:8px;flex-wrap:wrap}.meter{height:6px;flex:1;min-width:80px;border-radius:50px;background:#233954;overflow:hidden}.meter-fill{height:100%;background:var(--ok);width:0%;transition:width .25s}.review-text{font-size:12px;color:#b4c7e4;font-weight:750}
+.ready{display:grid;place-items:center;text-align:center;padding:18px 0 20px;gap:9px}.ready-icon{width:67px;height:67px;border-radius:20px;display:grid;place-items:center;color:#19283c;background:linear-gradient(135deg,#ffe4a0,#e6b13e);font-size:30px}.ready h2{font-size:26px;margin:6px 0 0;letter-spacing:-.04em}.ready p{color:var(--muted);margin:0 0 12px;font-size:13px}.ready .btn{width:100%;max-width:380px;padding:15px}.utility{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin:20px 0 0}.utility .btn{font-size:12px;padding:8px 11px}
+.bottom-notes{margin:25px 0;text-align:center;font-size:12px;color:#7f94b6}
+@media(max-width:620px){.shell,.header{width:calc(100% - 22px)}.hero{padding-top:16px}.hero h1{font-size:34px}.steps{margin-top:5px}.step{gap:4px;font-size:12px;padding:10px 3px}.step .digit{width:18px;height:18px}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}.field.two{grid-column:1/-1}.topics{grid-template-columns:1fr}.bottom{display:grid;grid-template-columns:1fr 1fr}.bottom .btn{padding:11px 8px;font-size:12px}.card{border-radius:16px}.bottom .btn:only-child{grid-column:1/-1}.utility{justify-content:flex-start}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<header class="header"><div class="brand"><div class="brand-mark">✦</div> Своя игра</div><span class="tag">Конструктор с ИИ</span></header>
+<main class="shell">
+<div class="hero"><div class="eyebrow">Создание викторин</div><h1>Создай игру за пару шагов</h1><p>Настрой поле, создай вопросы и скачай готовый сайт.</p></div>
+<nav class="steps" aria-label="Этапы создания">
+<button class="step active" data-step="1" type="button"><span class="digit">1</span> Настройка</button>
+<button class="step" data-step="2" type="button"><span class="digit">2</span> Вопросы</button>
+<button class="step" data-step="3" type="button"><span class="digit">3</span> Скачать</button>
+</nav>
+
+<section id="step1">
+<div class="card">
+<div class="card-head"><h2>Параметры игры</h2></div>
+<div class="fields">
+<div class="field wide"><label for="title">Название</label><input id="title" class="control" placeholder="Например, Глобальная экономика"></div>
+<div class="field"><label for="topicsCount">Темы</label><input id="topicsCount" class="control" type="number" min="1" max="12" inputmode="numeric"></div>
+<div class="field"><label for="teamsCount">Команды</label><input id="teamsCount" class="control" type="number" min="1" max="10" inputmode="numeric"></div>
+<div class="field"><label for="questionsCount">Всего вопросов</label><input id="questionsCount" class="control" type="number" min="1" max="120" inputmode="numeric"></div>
+</div>
+<div class="distribution" id="distribution"></div><div class="suggestions" id="suggestion"></div>
+</div>
+<div class="card">
+<div class="card-head"><h2>Названия тем</h2><span class="hint" id="topicsHint"></span></div>
+<div class="topics" id="topicList"></div>
+<details class="settings" id="optional"><summary>Дополнительно <span class="chevron">⌄</span></summary>
+<div class="extra">
+<div class="field"><label for="password">Пароль ведущего</label><input id="password" class="control" type="text" maxlength="40"></div>
+<div class="field"><label for="subject">Предмет или общая тема для ИИ</label><input id="subject" class="control" placeholder="Например, экономическая безопасность"></div>
+<div class="field"><label for="difficulty">Сложность</label><select id="difficulty" class="control"><option value="постепенно усложняющиеся">От простого к сложному</option><option value="простые">Простые</option><option value="средние">Средние</option><option value="сложные">Сложные</option></select></div>
+<div class="field"><label for="source">Текст лекции для ИИ</label><textarea id="source" class="control" placeholder="Необязательно: вставь текст, чтобы ИИ опирался на него"></textarea></div>
+<div class="field"><label for="file">Загрузить текстовый файл</label><input id="file" class="control" type="file" accept=".txt,.md,text/plain,text/markdown"><span id="fileName" class="extra-note">TXT или MD</span></div>
+<div class="field"><label for="apiUrl">Адрес ИИ-сервера</label><input id="apiUrl" class="control" type="url" placeholder="Подключён автоматически"></div>
+</div></details>
+</div>
+<div class="bottom">
+<button id="empty" class="btn ghost" type="button">Ввести вручную</button>
+<button id="generate" class="btn ai" type="button">✦ Создать с ИИ</button>
+</div><p id="status" class="status" role="status" aria-live="polite"></p>
+</section>
+
+<section id="step2" hidden>
+<div class="card">
+<div class="card-head"><div><h2>Вопросы и ответы</h2><span class="hint">Открой тему, чтобы изменить вопросы</span></div><button class="btn small ghost" id="clearQuestions" type="button">Очистить</button></div>
+<div class="review"><span class="review-text" id="reviewCount">0 из 0</span><div class="meter"><div class="meter-fill" id="meterFill"></div></div></div>
+<div class="question-list" id="editor"></div>
+</div>
+<div class="bottom">
+<button class="btn ghost" type="button" id="backSettings">← Назад</button>
+<button class="btn primary" type="button" id="goExport">Далее →</button>
+</div>
+<p id="editorStatus" class="status" role="status" aria-live="polite"></p>
+<div class="utility"><button id="regenerate" class="btn small" type="button">✦ Перегенерировать с ИИ</button><button id="demo" class="btn small ghost" type="button">Поля-примеры</button></div>
+</section>
+
+<section id="step3" hidden>
+<div class="card">
+<div class="ready"><div class="ready-icon">⬇</div><h2>Твоя игра готова!</h2><p id="finalSummary">Скачай HTML и открой его на любом устройстве.</p>
+<button id="download" class="btn primary" type="button">⬇ Скачать index.html</button>
+<button id="preview" class="btn" type="button">▶ Предпросмотр игры</button></div>
+<div class="utility"><button id="jsonExport" class="btn ghost" type="button">↓ Сохранить проект</button><label class="btn ghost" style="cursor:pointer">↑ Загрузить проект <input id="jsonImport" hidden type="file" accept=".json,application/json"></label><button class="btn ghost" id="backEditor" type="button">← Редактировать</button></div>
+<p id="exportStatus" class="status" role="status" aria-live="polite"></p>
+</div>
+</section>
+<div class="bottom-notes">Изменения сохраняются автоматически · ИИ может ошибаться</div>
+</main>
+<script src="builder.js"></script>
+</body>
+</html>
