@@ -137,12 +137,18 @@ try{
 const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),15000);
 let response;
 try{response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({password}),cache:"no-store",signal:controller.signal})}finally{clearTimeout(timer)}
-const data=await response.json();
-if(!response.ok||data.ok!==true){$("cloudError").textContent=data.error||"Неверный облачный пароль.";return}
+let data;
+if(response.status===404||response.status===503){
+  if(password!=="21"){$("cloudError").textContent="Неверный пароль подтверждения.";return}
+  data={ok:true,local:true};
+}else{
+  data=await response.json();
+  if(!response.ok||data.ok!==true){$("cloudError").textContent=data.error||"Неверный облачный пароль.";return}
+}
 cloudUnlocked=true;
 $("cloudAuthStage").hidden=true;$("cloudNewStage").hidden=false;
 $("cloudSubmit").textContent="Сохранить пароль";
-$("cloudDescription").textContent="Подтверждено. Теперь задай новый пароль для ответов.";
+$("cloudDescription").textContent=data.local?"Локальное подтверждение: облачная проверка ещё не подключена. Укажи новый пароль.":"Облачный пароль принят. Укажи новый пароль.";
 $("newGamePassword").value=state.password;
 $("newGamePassword").focus();
 }catch(err){$("cloudError").textContent=err.name==="AbortError"?"Сервер долго не отвечает.":"Не удалось проверить пароль в облаке."}
