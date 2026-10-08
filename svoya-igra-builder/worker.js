@@ -23,6 +23,31 @@ export default {
     const origin=req.headers.get("origin")||"";
     const trusted=origin===""||origin===url.origin||ALLOWED.has(origin);
     if(path==="/health")return reply({ok:true,ai:!!env.AI},200,trusted?origin:"");
+
+    if(path==="/api/verify-cloud-password"){
+      if(!trusted)return reply({error:"Недопустимый источник."},403);
+      if(req.method==="OPTIONS")return new Response(null,{status:204,headers:{"access-control-allow-origin":origin||url.origin,"access-control-allow-methods":"POST, OPTIONS","access-control-allow-headers":"Content-Type","access-control-max-age":"600","vary":"Origin"}});
+      if(req.method!=="POST")return reply({error:"Только POST."},405,origin);
+      if(!env.CLOUD_PASSWORD)return reply({error:"Облачный пароль ещё не настроен на сервере."},503,origin||url.origin);
+      try{
+        const ip=req.headers.get("cf-connecting-ip")||"anonymous";
+        if(env.QUIZ_LIMITER){
+          const individual=await env.QUIZ_LIMITER.limit({key:"password:"+ip});
+          if(!individual.success)return reply({error:"Слишком много попыток. Попробуй позднее."},429,origin||url.origin);
+          const common=await env.QUIZ_LIMITER.limit({key:"password-global"});
+          if(!common.success)return reply({error:"Слишком много проверок. Попробуй позднее."},429,origin||url.origin);
+        }
+        const raw=await req.text();
+        if(raw.length>1000)return reply({error:"Запрос слишком большой."},413,origin||url.origin);
+        const submitted=String(JSON.parse(raw)?.password??"");
+        const secret=String(env.CLOUD_PASSWORD);
+        const a=new TextEncoder().encode(submitted),b=new TextEncoder().encode(secret);
+        let difference=a.length^b.length;
+        for(let i=0;i<Math.max(a.length,b.length);i++)difference|=(a[i]||0)^(b[i]||0);
+        const ok=difference===0&&submitted.length>0;
+        return reply(ok?{ok:true}:{ok:false,error:"Неверный облачный пароль."},ok?200:401,origin||url.origin);
+      }catch(e){return reply({error:"Не удалось проверить пароль."},400,origin||url.origin)}
+    }
     if(path==="/api/generate"){
       if(req.method==="OPTIONS"){
         if(!trusted)return new Response(null,{status:403});
