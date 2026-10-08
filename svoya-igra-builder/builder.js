@@ -83,10 +83,10 @@ const LAYOUT_KEY="svoya-builder-layout";
 function setLayout(mode){
 if(!["auto","phone","laptop"].includes(mode))mode="auto";
 document.documentElement.dataset.layout=mode;
-document.querySelectorAll("[data-layout]").forEach(btn=>btn.classList.toggle("active",btn.dataset.layout===mode));
+document.querySelectorAll(".size-btn[data-layout]").forEach(btn=>btn.classList.toggle("active",btn.dataset.layout===mode));
 try{localStorage.setItem(LAYOUT_KEY,mode)}catch(e){}
 }
-document.querySelectorAll("[data-layout]").forEach(btn=>btn.onclick=()=>setLayout(btn.dataset.layout));
+document.querySelectorAll(".size-btn[data-layout]").forEach(btn=>btn.onclick=()=>setLayout(btn.dataset.layout));
 setLayout(localStorage.getItem(LAYOUT_KEY)||"auto");
 
 let cloudUnlocked=false,cloudBusy=false;
@@ -238,7 +238,7 @@ function goStep(n){
  for(let k=1;k<=3;k++)$("step"+k).hidden=k!==n;
  document.querySelectorAll("[data-step]").forEach(b=>b.classList.toggle("active",Number(b.dataset.step)===n));
  if(n===2){renderEditor();updateReview()}
- if(n===3)$("finalSummary").textContent=state.topicsCount+" тем · "+state.questionsCount+" вопросов · "+state.teamsCount+" команд";
+ if(n===3)$("finalSummary").textContent=state.topicsCount+" тем · "+state.questionsCount+" вопросов · "+state.teamsCount+" "+(state.teamsCount===1?"команда":state.teamsCount<5?"команды":"команд");
  window.scrollTo({top:0,behavior:"smooth"});
 }
 document.querySelectorAll("[data-step]").forEach(b=>b.onclick=()=>goStep(Number(b.dataset.step)));
