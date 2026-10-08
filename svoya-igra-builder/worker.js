@@ -100,18 +100,21 @@ export default {
         const subject=String(p.subject||"").slice(0,240);
         const source=String(p.source||"").slice(0,6500);
         const difficulty=String(p.difficulty||"постепенно усложняющиеся").slice(0,50);
+        const languageMap={"ru":"русском языке","uz-Latn":"узбекском языке, строго латиница (o‘zbek lotin)","uz-Cyrl":"узбекском языке, строго кириллица (ўзбек кирилл)","en":"английском языке","tr":"турецком языке","kk":"казахском языке","de":"немецком языке","fr":"французском языке","es":"испанском языке","ar":"арабском языке","zh":"китайском языке","ja":"японском языке","ko":"корейском языке","auto":"том же языке и письме, что основной исходный материал; при отсутствии материала используй язык названия категории"};
+        const language=languageMap[String(p.language||"ru")]||languageMap.ru;
         const offset=Math.max(0,Math.min(25,Number(p.offset)||0));
         const avoid=Array.isArray(p.avoid)?p.avoid.slice(0,12).map(v=>String(v).slice(0,180)):[];
         const system=[
           "Ты методист и автор интеллектуальной викторины «Своя игра» для университета.",
           "Ответь ТОЛЬКО JSON объектом: {\"items\":[{\"question\":\"...\",\"answer\":\"...\"}]} без markdown.",
-          "Количество элементов обязано совпадать с запросом. Пиши по-русски, без вариантов ответа.",
+          "Количество элементов обязано совпадать с запросом. Без вариантов ответа.",
+          "Все вопросы и ответы напиши на "+language+". Названия тем не переводи и не меняй автоматически.",
           "Вопросы должны быть разными, ясными, пригодными для устного ответа. Ответы точные и короткие.",
           "Уровни усложняются от вопроса 100 до 1000 баллов. Не повторы.",
           "Если есть исходный материал, используй только факты из него, не придумывай отсутствующие данные и даты.",
           "Если информации из текста недостаточно, составляй вопросы по остальным содержащимся фактам и избегай спорных цифр."
         ].join(" ");
-        const user=JSON.stringify({category,subject,difficulty,number,first_level:offset+1,source:source||"(материал не приложен, используй общие знания)",avoid});
+        const user=JSON.stringify({category,subject,difficulty,language,number,first_level:offset+1,source:source||"(материал не приложен, используй общие знания)",avoid});
         let parsed,model="Cloudflare Llama 3.1 8B";
         if(env.GEMINI_API_KEY){
           try{
@@ -135,12 +138,12 @@ export default {
           // The 8B model sometimes generates one item even when asked for five.
           // Preserve existing items, generate each missing item and return partial
           // results instead of failing the whole client request.
-          const oneSystem='Ты автор игры «Своя игра». Верни ровно ОДИН новый вопрос на русском. Только JSON: {"items":[{"question":"...","answer":"..."}]}';
+          const oneSystem='Ты автор игры «Своя игра». Верни ровно ОДИН новый вопрос на '+language+'. Только JSON: {"items":[{"question":"...","answer":"..."}]}';
           for(let missing=items.length;missing<number;missing++){
             let added=false;
             for(let retry=0;retry<3&&!added;retry++){
               try{
-                const followup=JSON.stringify({category,subject,difficulty,source:source||"общие знания",level:offset+missing+1,avoid:[...avoid,...items.map(v=>v.question)].slice(-20),number:1});
+                const followup=JSON.stringify({category,subject,difficulty,language,source:source||"общие знания",level:offset+missing+1,avoid:[...avoid,...items.map(v=>v.question)].slice(-20),number:1});
                 const extra=await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8",{
                   messages:[{role:"system",content:oneSystem},{role:"user",content:followup}],
                   max_tokens:700,temperature:0.24,top_p:0.9
