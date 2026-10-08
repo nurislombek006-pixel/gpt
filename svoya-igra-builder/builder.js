@@ -169,19 +169,22 @@ if(!base){if(location.protocol==="file:")throw Error("Для ИИ открой �
 if(!/^https?:\/\//i.test(base))throw Error("Укажи URL ИИ-сервера, начинающийся с https://");
 return base.endsWith("/api/generate")?base:base+"/api/generate"
 }
+function aiProgress(done,total,label,active){const box=$("aiProgress");box.hidden=false;const pct=total?Math.round(done/total*100):0;$("aiProgressFill").style.width=pct+"%";$("aiProgressPercent").textContent=pct+"%";$("aiProgressText").textContent=label;box.setAttribute("aria-valuenow",String(pct));box.classList.toggle("running",active);box.classList.toggle("done",done===total);}
 async function generate(){
 if(generating)return;if(!valid()){notice("status","Исправь распределение вопросов перед генерацией.","err");return}
 if(state.categories.some(c=>c.qs.some(q=>q[0]||q[1]))&&!confirm("ИИ заменит все заполненные вопросы. Продолжить?"))return;
 let url;try{url=endpoint()}catch(e){notice("editorStatus",e.message,"err");return}
 goStep(2);generating=true;$("generate").disabled=true;$("regenerate").disabled=true;
 let done=0,total=state.questionsCount;
+aiProgress(0,total,"Подготовка вопросов…",true);
 notice("editorStatus","ИИ работает: создание вопросов…","note");
 try{
 for(let ci=0;ci<state.categories.length;ci++){
 const cat=state.categories[ci];const n=cat.qs.length;
 for(let start=0;start<n;start+=5){
 const count=Math.min(5,n-start);
-notice("editorStatus","ИИ: «"+(cat.name||"Тема "+(ci+1))+"», вопросы "+(start+1)+"–"+(start+count)+" из "+n+". Всего готово "+done+"/"+total+".","note");
+aiProgress(done,total,"ИИ думает · "+cat.name+" · вопросы "+(start+1)+"–"+(start+count),true);
+notice("editorStatus","ИИ генерирует вопросы. Создано "+done+" из "+total+".","note");
 const controller=new AbortController();const timer=setTimeout(()=>controller.abort(),75000);
 let response;
 try{response=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({category:cat.name||"Тема "+(ci+1),subject:state.subject,difficulty:state.difficulty,number:count,offset:start,source:state.source.slice(0,9000),avoid:cat.qs.slice(0,start).map(x=>x[0]).filter(Boolean)}),signal:controller.signal})}finally{clearTimeout(timer)}
@@ -189,11 +192,11 @@ let data;try{data=await response.json()}catch(e){throw Error("ИИ-сервер 
 if(!response.ok)throw Error(data.error||"Сервер ИИ: HTTP "+response.status);
 if(!Array.isArray(data.items)||data.items.length<count)throw Error("ИИ вернул меньше вопросов, чем ожидалось. Попробуй ещё раз.");
 data.items.slice(0,count).forEach((item,k)=>{if(typeof item.question!=="string"||typeof item.answer!=="string")throw Error("Неправильный формат ответа ИИ.");cat.qs[start+k]=[item.question,item.answer]});
-done+=count;save();renderEditor();
+done+=count;save();renderEditor();aiProgress(done,total,"Готово "+done+" из "+total+" вопросов",true);
 }
 }
-notice("editorStatus","Готово! ИИ подготовил "+done+" вопросов. Проверь их, затем скачай HTML.","ok");
-}catch(e){notice("editorStatus","ИИ остановился после "+done+" вопросов: "+(e.name==="AbortError"?"превышено время ожидания ответа.":e.message)+" Проверь адрес сервера и попробуй снова. Уже созданные вопросы сохранены.","err")}
+aiProgress(done,total,"Все вопросы созданы",false);notice("editorStatus","Проверь ответы, затем нажми «Далее».","ok");
+}catch(e){aiProgress(done,total,"Остановлено · "+done+" из "+total,false);notice("editorStatus","ИИ остановился после "+done+" вопросов: "+(e.name==="AbortError"?"превышено время ожидания ответа.":e.message)+" Проверь адрес сервера и попробуй снова. Уже созданные вопросы сохранены.","err")}
 finally{generating=false;$("generate").disabled=false;$("regenerate").disabled=false}
 }
 $("generate").onclick=generate;$("regenerate").onclick=generate;
