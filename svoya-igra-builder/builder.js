@@ -3,11 +3,11 @@
 const $=id=>document.getElementById(id);
 const STORE="svoya-builder-project-v2";
 // Compact workflow
-const initial=()=>({title:"Своя игра — Экономика",topicsCount:5,questionsCount:25,teamsCount:3,password:"20062611",subject:"",source:"",difficulty:"постепенно усложняющиеся",apiUrl:"https://svoya-game-ai-builder.masterofluck112-apps.workers.dev",categories:Array.from({length:5},(_,i)=>({name:"Тема "+(i+1),qs:Array.from({length:5},()=>["",""])}))});
+const initial=()=>({title:"Своя игра — Экономика",topicsCount:5,questionsCount:25,teamsCount:3,password:"20062611",subject:"",source:"",difficulty:"постепенно усложняющиеся",language:"ru",apiUrl:"https://svoya-game-ai-builder.masterofluck112-apps.workers.dev",categories:Array.from({length:5},(_,i)=>({name:"Тема "+(i+1),qs:Array.from({length:5},()=>["",""])}))});
 let state=initial();
 try{let loaded=JSON.parse(localStorage.getItem(STORE)||"null");if(loaded&&typeof loaded==="object"&&Array.isArray(loaded.categories))state=Object.assign(initial(),loaded);if(state.password==="2611")state.password="20062611"}catch(e){}
 let generating=false;
-const values=["title","password","topicsCount","questionsCount","teamsCount","subject","source","difficulty","apiUrl"];
+const values=["title","password","topicsCount","questionsCount","teamsCount","subject","source","difficulty","language","apiUrl"];
 function cap(x,min,max){return Math.min(max,Math.max(min,Number(x)||min))}
 function save(){localStorage.setItem(STORE,JSON.stringify(state))}
 function pair(x){return Array.isArray(x)?[String(x[0]||""),String(x[1]||"")]:["",""]}
@@ -191,7 +191,7 @@ const sleep=ms=>new Promise(resolve=>setTimeout(resolve,ms));
 const progress=(message)=>{aiProgress(done,total,message,true);notice("editorStatus","Создано "+done+" из "+total+". "+message,"note")};
 progress("ИИ готовит вопросы…");
 async function ask(cat,ci,start,count){
- const body={category:cat.name||"Тема "+(ci+1),subject:state.subject,difficulty:state.difficulty,
+ const body={category:cat.name||"Тема "+(ci+1),subject:state.subject,difficulty:state.difficulty,language:state.language||"ru",
  number:count,offset:start,source:state.source.slice(0,9000),
  avoid:cat.qs.map(q=>q[0]).filter(Boolean).slice(-20)};
  for(let attempt=0;attempt<5;attempt++){
