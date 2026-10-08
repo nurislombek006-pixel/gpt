@@ -10,6 +10,7 @@ function reply(data,status=200,origin=""){
   return new Response(JSON.stringify(data),{status,headers});
 }
 function extract(text){
+  if(text&&typeof text==="object")return text;
   if(typeof text!=="string")throw new Error("Пустой ответ ИИ.");
   const clean=text.trim().replace(/^\x60+\s*json\s*/i,"").replace(/\x60+$/g,"").trim();
   try{return JSON.parse(clean)}catch(e){}
@@ -93,8 +94,33 @@ export default {
         const parsed=extract(result?.response??result);
         let items=Array.isArray(parsed.items)?parsed.items:[];
         items=items.map(x=>({question:String(x.question||"").trim().slice(0,350),answer:String(x.answer||"").trim().slice(0,450)})).filter(x=>x.question&&x.answer);
-        if(items.length<number)throw new Error("Модель выдала "+items.length+" вместо "+number+" вопросов. Повтори генерацию.");
-        return reply({items:items.slice(0,number),model:"Cloudflare Workers AI"},200,origin||url.origin);
+        if(items.length<number){
+          // The 8B model sometimes generates one item even when asked for five.
+          // Preserve existing items, generate each missing item and return partial
+          // results instead of failing the whole client request.
+          const oneSystem="Ты автор игры «Своя игра». Верни ровно ОДИН новый вопрос на русском. Только JSON: {\\\"items\\\":[{\\\"question\\\":\\\"...\\\",\\\"answer\\\":\\\"...\\\"}]}";
+          for(let missing=items.length;missing<number;missing++){
+            let added=false;
+            for(let retry=0;retry<3&&!added;retry++){
+              try{
+                const followup=JSON.stringify({category,subject,difficulty,source:source||"общие знания",level:offset+missing+1,avoid:[...avoid,...items.map(v=>v.question)].slice(-20),number:1});
+                const extra=await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8",{
+                  messages:[{role:"system",content:oneSystem},{role:"user",content:followup}],
+                  max_tokens:700,temperature:0.24,top_p:0.9
+                });
+                const parsedOne=extract(extra?.response??extra);
+                const rawOne=Array.isArray(parsedOne.items)?parsedOne.items[0]:parsedOne;
+                const question=String(rawOne?.question||"").trim().slice(0,350);
+                const answer=String(rawOne?.answer||"").trim().slice(0,450);
+                if(question&&answer&&!items.some(q=>q.question.toLowerCase()===question.toLowerCase())){
+                  items.push({question,answer});added=true;
+                }
+              }catch(e){/* Another inference attempt can recover malformed model output. */}
+            }
+            if(!added)break;
+          }
+        }
+        return reply({items:items.slice(0,number),partial:items.length<number,model:"Cloudflare Workers AI"},200,origin||url.origin);
       }catch(e){return reply({error:e instanceof SyntaxError?"Некорректный JSON запроса.":"Ошибка генерации: "+String(e?.message||e).slice(0,150)},502,origin||url.origin)}
     }
     if(req.method!=="GET"&&req.method!=="HEAD")return new Response("Method not allowed",{status:405});
