@@ -23,10 +23,22 @@ details.settings{border-top:1px solid var(--stroke);margin-top:20px;padding-top:
 .bottom-notes{margin:25px 0;text-align:center;font-size:12px;color:#7f94b6}
 @media(max-width:620px){.shell,.header{width:calc(100% - 22px)}.hero{padding-top:16px}.hero h1{font-size:34px}.steps{margin-top:5px}.step{gap:4px;font-size:12px;padding:10px 3px}.step .digit{width:18px;height:18px}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}.field.two{grid-column:1/-1}.topics{grid-template-columns:1fr}.bottom{display:grid;grid-template-columns:1fr 1fr}.bottom .btn{padding:11px 8px;font-size:12px}.card{border-radius:16px}.bottom .btn:only-child{grid-column:1/-1}.utility{justify-content:flex-start}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
+
+.head-tools{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}.layout-toggle{display:inline-flex;gap:2px;padding:3px;background:#121f36;border:1px solid #324b6e;border-radius:10px}.size-btn{background:transparent;border:0;color:#b4c7e5;padding:6px 9px;font-size:12px;font-weight:800;border-radius:7px}.size-btn.active{background:#36547b;color:#fff}
+.password-field{display:flex;align-items:center;gap:8px}.password-field .control{flex:1;min-width:0}.password-field .btn{flex-shrink:0}.cloud-overlay{position:fixed;inset:0;background:#020715dd;backdrop-filter:blur(7px);z-index:50;display:flex;align-items:center;justify-content:center;padding:14px}.cloud-dialog{width:min(420px,100%);max-height:calc(100dvh - 28px);overflow:auto;background:linear-gradient(145deg,#1a2d49,#0e1b2d);border:1px solid #5c7596;border-radius:20px;padding:25px;box-shadow:0 18px 72px #000b}.cloud-top{display:flex;justify-content:space-between;gap:8px;align-items:center}.cloud-top h2{margin:0}.cloud-close{background:#263b59;color:white;border:1px solid #4a6184;border-radius:9px;font-size:23px;width:36px;height:36px}.cloud-hint{align-self:flex-end;color:#7385a0;opacity:.36;font-size:10px;letter-spacing:.02em}.cloud-error{min-height:20px;font-size:12px;color:var(--error)}.full{width:100%}
+.ai-progress{margin:13px 0 10px;padding:13px 14px;background:#102a46;border:1px solid #3c577b;border-radius:13px}.progress-line{height:10px;border-radius:20px;background:#293d59;overflow:hidden;position:relative}.progress-line:before{content:"";position:absolute;inset:0;z-index:1;opacity:.45;background:linear-gradient(105deg,transparent 0%,#7185b5 50%,transparent 100%);width:30%;animation:scan 1.7s ease-in-out infinite}.progress-fill{width:0%;height:100%;border-radius:20px;background:linear-gradient(90deg,#65dac0,#f5db91);transition:width .5s ease;position:relative;z-index:2}.progress-caption{display:flex;justify-content:space-between;gap:14px;margin-top:9px;font-size:12px;color:#c6d9f1}.progress-caption b{color:#ffe19a;font-variant-numeric:tabular-nums}.ai-progress:not(.running) .progress-line:before{display:none}@keyframes scan{from{transform:translateX(-100%)}to{transform:translateX(340%)}}.ai-progress.done{border-color:#408b77}
+[data-layout="phone"] .shell,[data-layout="phone"] .header{width:min(410px,calc(100% - 20px))}[data-layout="phone"] .fields{grid-template-columns:1fr}[data-layout="phone"] .field.two,[data-layout="phone"] .field.wide{grid-column:1}[data-layout="phone"] .topics{grid-template-columns:1fr}[data-layout="phone"] .bottom{display:grid;grid-template-columns:1fr 1fr}[data-layout="phone"] .hero h1{font-size:33px}
+[data-layout="laptop"] .shell,[data-layout="laptop"] .header{width:min(1100px,calc(100% - 32px))}
+@media(max-width:540px){.header{padding-top:15px}.head-tools .tag{display:none}.hero{padding:17px 0 12px}.hero h1{font-size:32px}.hero p{font-size:13px}.card{padding:16px}.fields{grid-template-columns:repeat(2,minmax(0,1fr))}.password-field{flex-wrap:wrap}.password-field .btn{flex:1 0 auto}.head-tools{gap:5px}.layout-toggle{padding:2px}.size-btn{padding:6px 8px}.cloud-dialog{padding:19px}.steps{position:sticky;top:0;z-index:8;background:#101e35e8;backdrop-filter:blur(10px)}}
+@media(max-width:365px){.fields{grid-template-columns:1fr}.field.two{grid-column:1}.step{font-size:11px}.hero h1{font-size:29px}}
+@media(prefers-reduced-motion:reduce){.progress-line:before{animation:none}.progress-fill{transition:none}}
 </style>
 </head>
 <body>
-<header class="header"><div class="brand"><div class="brand-mark">✦</div> Своя игра</div><span class="tag">Конструктор с ИИ</span></header>
+<header class="header"><div class="brand"><div class="brand-mark">✦</div> Своя игра</div>
+<div class="head-tools"><span class="tag">Конструктор с ИИ</span><div class="layout-toggle" aria-label="Размер интерфейса">
+<button class="size-btn active" data-layout="auto" type="button" title="Автоматический">Авто</button><button class="size-btn" data-layout="phone" type="button" title="Телефон">📱</button><button class="size-btn" data-layout="laptop" type="button" title="Ноутбук">💻</button>
+</div></div></header>
 <main class="shell">
 <div class="hero"><div class="eyebrow">Создание викторин</div><h1>Создай игру за пару шагов</h1><p>Настрой поле, создай вопросы и скачай готовый сайт.</p></div>
 <nav class="steps" aria-label="Этапы создания">
@@ -51,7 +63,7 @@ details.settings{border-top:1px solid var(--stroke);margin-top:20px;padding-top:
 <div class="topics" id="topicList"></div>
 <details class="settings" id="optional"><summary>Дополнительно <span class="chevron">⌄</span></summary>
 <div class="extra">
-<div class="field"><label for="password">Пароль ведущего</label><input id="password" class="control" type="text" maxlength="40"></div>
+<div class="field"><label for="password">Пароль для просмотра ответов</label><div class="password-field"><input id="password" class="control" type="password" readonly autocomplete="off" maxlength="40" aria-label="Текущий пароль"><button type="button" id="changePassword" class="btn small ghost">Изменить</button></div><span class="extra-note">Изменение через облачный пароль</span></div>
 <div class="field"><label for="subject">Предмет или общая тема для ИИ</label><input id="subject" class="control" placeholder="Например, экономическая безопасность"></div>
 <div class="field"><label for="difficulty">Сложность</label><select id="difficulty" class="control"><option value="постепенно усложняющиеся">От простого к сложному</option><option value="простые">Простые</option><option value="средние">Средние</option><option value="сложные">Сложные</option></select></div>
 <div class="field"><label for="source">Текст лекции для ИИ</label><textarea id="source" class="control" placeholder="Необязательно: вставь текст, чтобы ИИ опирался на него"></textarea></div>
@@ -75,6 +87,7 @@ details.settings{border-top:1px solid var(--stroke);margin-top:20px;padding-top:
 <button class="btn ghost" type="button" id="backSettings">← Назад</button>
 <button class="btn primary" type="button" id="goExport">Далее →</button>
 </div>
+<div id="aiProgress" class="ai-progress" role="progressbar" aria-label="Генерация вопросов с ИИ" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" hidden><div class="progress-line"><div id="aiProgressFill" class="progress-fill"></div></div><div class="progress-caption"><span id="aiProgressText">Создание вопросов…</span><b id="aiProgressPercent">0%</b></div></div>
 <p id="editorStatus" class="status" role="status" aria-live="polite"></p>
 <div class="utility"><button id="regenerate" class="btn small" type="button">✦ Перегенерировать с ИИ</button><button id="demo" class="btn small ghost" type="button">Поля-примеры</button></div>
 </section>
@@ -90,6 +103,14 @@ details.settings{border-top:1px solid var(--stroke);margin-top:20px;padding-top:
 </section>
 <div class="bottom-notes">Изменения сохраняются автоматически · ИИ может ошибаться</div>
 </main>
+<div id="cloudModal" class="cloud-overlay" hidden role="dialog" aria-modal="true" aria-labelledby="cloudTitle">
+<div class="cloud-dialog"><div class="cloud-top"><h2 id="cloudTitle">Смена пароля</h2><button type="button" id="cloudClose" class="cloud-close" aria-label="Закрыть">×</button></div>
+<p class="hint" id="cloudDescription">Подтверди право на изменение облачным паролем.</p>
+<form id="cloudForm" autocomplete="off">
+<div id="cloudAuthStage" class="field"><label for="cloudPassword">Облачный пароль</label><input id="cloudPassword" class="control" type="password" inputmode="numeric" required autocomplete="off" placeholder="••••"><span class="cloud-hint">подсказка: школа</span></div>
+<div id="cloudNewStage" class="field" hidden><label for="newGamePassword">Новый пароль для ответов</label><input id="newGamePassword" class="control" type="text" maxlength="40" minlength="1" autocomplete="off"><span class="hint">Пароль будет применён к следующим играм, созданным здесь.</span></div>
+<p id="cloudError" class="cloud-error" aria-live="polite"></p><button id="cloudSubmit" class="btn primary full" type="submit">Подтвердить</button>
+</form></div></div>
 <script src="builder.js"></script>
 </body>
 </html>
